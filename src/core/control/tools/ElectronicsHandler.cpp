@@ -65,11 +65,63 @@ void ElectronicsHandler::onButtonReleaseEvent(const PositionInputData& pos, doub
         currentShape.push_back(Point(sx + nx, sy + ny, Point::NO_PRESSURE));
     };
 
+
+
     auto addRotPt = [&](double lx, double ly) {
         double nx = (lx * cT - ly * sT) * scale;
         double ny = (lx * sT + ly * cT) * scale;
         addPt(nx, ny);
     };
+
+    auto drawLetter = [&](char c, double ox, double oy, double cw, double ch) {
+        switch(c) {
+            case 'A':
+                newShape(); addRotPt(ox, oy+ch); addRotPt(ox+cw/2.0, oy); addRotPt(ox+cw, oy+ch);
+                newShape(); addRotPt(ox+cw*0.25, oy+ch/2.0); addRotPt(ox+cw*0.75, oy+ch/2.0);
+                break;
+            case 'N':
+                newShape(); addRotPt(ox, oy+ch); addRotPt(ox, oy); addRotPt(ox+cw, oy+ch); addRotPt(ox+cw, oy);
+                break;
+            case 'D':
+                newShape(); addRotPt(ox, oy+ch); addRotPt(ox, oy); addRotPt(ox+cw/2.0, oy);
+                for(int i=1; i<=8; ++i) addRotPt(ox+cw/2.0 + cw/2.0*std::sin(i*M_PI/8.0), oy+ch/2.0 - ch/2.0*std::cos(i*M_PI/8.0));
+                addRotPt(ox+cw/2.0, oy+ch); addRotPt(ox, oy+ch);
+                break;
+            case 'O':
+                newShape();
+                for(int i=0; i<=16; ++i) addRotPt(ox+cw/2.0 + cw/2.0*std::sin(i*2*M_PI/16.0), oy+ch/2.0 - ch/2.0*std::cos(i*2*M_PI/16.0));
+                break;
+            case 'R':
+                newShape(); addRotPt(ox, oy+ch); addRotPt(ox, oy); addRotPt(ox+cw/2.0, oy);
+                for(int i=1; i<=8; ++i) addRotPt(ox+cw/2.0 + cw/2.0*std::sin(i*M_PI/8.0), oy+ch/4.0 - ch/4.0*std::cos(i*M_PI/8.0));
+                addRotPt(ox+cw/2.0, oy+ch/2.0); addRotPt(ox, oy+ch/2.0);
+                newShape(); addRotPt(ox+cw/2.0, oy+ch/2.0); addRotPt(ox+cw, oy+ch);
+                break;
+            case 'T':
+                newShape(); addRotPt(ox, oy); addRotPt(ox+cw, oy);
+                newShape(); addRotPt(ox+cw/2.0, oy); addRotPt(ox+cw/2.0, oy+ch);
+                break;
+            case 'X':
+                newShape(); addRotPt(ox, oy); addRotPt(ox+cw, oy+ch);
+                newShape(); addRotPt(ox+cw, oy); addRotPt(ox, oy+ch);
+                break;
+        }
+    };
+
+    auto drawWord = [&](const char* word, double ox, double oy) {
+        double cw = 6.0;
+        double ch = 10.0;
+        double spacing = 2.0;
+        int len = 0;
+        for(const char* p = word; *p; ++p) len++;
+        double total_width = len * cw + (len - 1) * spacing;
+        double start_x = ox - total_width / 2.0;
+        for(const char* p = word; *p; ++p) {
+            drawLetter(*p, start_x, oy, cw, ch);
+            start_x += cw + spacing;
+        }
+    };
+
 
     switch (component) {
         case ELEC_WAVE_SINE: {
@@ -258,49 +310,90 @@ void ElectronicsHandler::onButtonReleaseEvent(const PositionInputData& pos, doub
             addRotPt(80, 50); addRotPt(100, 50);
             break;
         }
-        case ELEC_GATE_AND:
-        case ELEC_GATE_NAND: {
-            addRotPt(0, 30); addRotPt(20, 30); addRotPt(20, 10); addRotPt(50, 10);
-            for(int i=-90; i<=90; i+=10) addRotPt(50 + 40*std::cos(i*M_PI/180), 50 + 40*std::sin(i*M_PI/180));
-            addRotPt(20, 90); addRotPt(20, 10);
-            newShape(); addRotPt(20, 70); addRotPt(0, 70);
+case ELEC_GATE_AND: {
+            addRotPt(0, 30); addRotPt(20, 30);
+            newShape(); addRotPt(0, 70); addRotPt(20, 70);
+            newShape(); addRotPt(20, 10); addRotPt(20, 90); addRotPt(50, 90);
+            for(int i=90; i>=-90; i-=10) addRotPt(50 + 40*std::cos(i*M_PI/180), 50 - 40*std::sin(i*M_PI/180));
+            addRotPt(50, 10); addRotPt(20, 10);
             newShape();
-            if (component == ELEC_GATE_NAND) {
-                addRotPt(90, 50); for(int i=0; i<=360; i+=30) addRotPt(90 + 5*std::cos(i*M_PI/180), 50 + 5*std::sin(i*M_PI/180));
-                newShape(); addRotPt(95, 50); addRotPt(110, 50);
-            } else { addRotPt(90, 50); addRotPt(110, 50); }
+            addRotPt(90, 50); addRotPt(120, 50);
+            drawWord("AND", 45, 45);
             break;
         }
-        case ELEC_GATE_OR:
+        case ELEC_GATE_NAND: {
+            addRotPt(0, 30); addRotPt(20, 30);
+            newShape(); addRotPt(0, 70); addRotPt(20, 70);
+            newShape(); addRotPt(20, 10); addRotPt(20, 90); addRotPt(50, 90);
+            for(int i=90; i>=-90; i-=10) addRotPt(50 + 40*std::cos(i*M_PI/180), 50 - 40*std::sin(i*M_PI/180));
+            addRotPt(50, 10); addRotPt(20, 10);
+            newShape();
+            for(int i=0; i<=360; i+=30) addRotPt(95 + 5*std::cos(i*M_PI/180), 50 + 5*std::sin(i*M_PI/180));
+            newShape(); addRotPt(100, 50); addRotPt(120, 50);
+            drawWord("NAND", 45, 45);
+            break;
+        }
+case ELEC_GATE_OR: {
+            addRotPt(0, 30); addRotPt(25, 30);
+            newShape(); addRotPt(0, 70); addRotPt(25, 70);
+            newShape();
+            for(int i=-90; i<=90; i+=15) addRotPt(10 + 20*std::cos(i*M_PI/180), 50 + 40*std::sin(i*M_PI/180));
+            for(int i=90; i>=0; i-=10) addRotPt(10 + 80*std::cos(i*M_PI/180), 10 + 80*std::sin(i*M_PI/180));
+            for(int i=0; i<=90; i+=10) addRotPt(10 + 80*std::cos(i*M_PI/180), 90 - 80*std::sin(i*M_PI/180));
+            newShape();
+            addRotPt(90, 50); addRotPt(120, 50);
+            drawWord("OR", 45, 45);
+            break;
+        }
         case ELEC_GATE_NOR: {
             addRotPt(0, 30); addRotPt(25, 30);
             newShape(); addRotPt(0, 70); addRotPt(25, 70);
             newShape();
             for(int i=-90; i<=90; i+=15) addRotPt(10 + 20*std::cos(i*M_PI/180), 50 + 40*std::sin(i*M_PI/180));
-            for(int i=90; i>=0; i-=10) addRotPt(10 + 90*std::cos(i*M_PI/180), 10 + 80*std::sin(i*M_PI/180));
-            for(int i=0; i<=90; i+=10) addRotPt(10 + 90*std::cos(i*M_PI/180), 90 - 80*std::sin(i*M_PI/180));
+            for(int i=90; i>=0; i-=10) addRotPt(10 + 80*std::cos(i*M_PI/180), 10 + 80*std::sin(i*M_PI/180));
+            for(int i=0; i<=90; i+=10) addRotPt(10 + 80*std::cos(i*M_PI/180), 90 - 80*std::sin(i*M_PI/180));
             newShape();
-            if (component == ELEC_GATE_NOR) {
-                for(int i=0; i<=360; i+=30) addRotPt(100 + 5*std::cos(i*M_PI/180), 50 + 5*std::sin(i*M_PI/180));
-                newShape(); addRotPt(105, 50); addRotPt(120, 50);
-            } else { addRotPt(100, 50); addRotPt(120, 50); }
+            for(int i=0; i<=360; i+=30) addRotPt(95 + 5*std::cos(i*M_PI/180), 50 + 5*std::sin(i*M_PI/180));
+            newShape(); addRotPt(100, 50); addRotPt(120, 50);
+            drawWord("NOR", 45, 45);
             break;
         }
-        case ELEC_GATE_NOT: {
-            addRotPt(0, 50); addRotPt(20, 50); addRotPt(20, 20); addRotPt(70, 50); addRotPt(20, 80); addRotPt(20, 50);
+case ELEC_GATE_NOT: {
+            addRotPt(0, 50); addRotPt(20, 50);
+            newShape(); addRotPt(20, 20); addRotPt(70, 50); addRotPt(20, 80); addRotPt(20, 20);
             newShape();
             for(int i=0; i<=360; i+=20) addRotPt(75 + 5*std::cos(i*M_PI/180), 50 + 5*std::sin(i*M_PI/180));
             newShape(); addRotPt(80, 50); addRotPt(100, 50);
+            drawWord("NOT", 35, 45);
             break;
         }
-        case ELEC_GATE_XOR:
-        case ELEC_GATE_XNOR: {
-            addRotPt(0, 30); addRotPt(15, 30); addRotPt(15, 10);
-            for(int i=-90; i<=90; i+=10) addRotPt(15 + 80*std::cos(i*M_PI/180), 50 + 80*std::sin(i*M_PI/180));
-            addRotPt(15, 90); addRotPt(15, 70); addRotPt(0, 70);
+case ELEC_GATE_XOR: {
+            addRotPt(0, 30); addRotPt(15, 30);
+            newShape(); addRotPt(0, 70); addRotPt(15, 70);
             newShape();
-            for(int i=-90; i<=90; i+=10) addRotPt(10 + 20*std::cos(i*M_PI/180), 50 + 40*std::sin(i*M_PI/180));
-            newShape(); addRotPt(95, 50); addRotPt(105, 50);
+            for(int i=-90; i<=90; i+=10) addRotPt(5 + 20*std::cos(i*M_PI/180), 50 + 40*std::sin(i*M_PI/180));
+            newShape();
+            for(int i=-90; i<=90; i+=15) addRotPt(15 + 20*std::cos(i*M_PI/180), 50 + 40*std::sin(i*M_PI/180));
+            for(int i=90; i>=0; i-=10) addRotPt(15 + 80*std::cos(i*M_PI/180), 10 + 80*std::sin(i*M_PI/180));
+            for(int i=0; i<=90; i+=10) addRotPt(15 + 80*std::cos(i*M_PI/180), 90 - 80*std::sin(i*M_PI/180));
+            newShape();
+            addRotPt(95, 50); addRotPt(120, 50);
+            drawWord("XOR", 45, 45);
+            break;
+        }
+        case ELEC_GATE_XNOR: {
+            addRotPt(0, 30); addRotPt(15, 30);
+            newShape(); addRotPt(0, 70); addRotPt(15, 70);
+            newShape();
+            for(int i=-90; i<=90; i+=10) addRotPt(5 + 20*std::cos(i*M_PI/180), 50 + 40*std::sin(i*M_PI/180));
+            newShape();
+            for(int i=-90; i<=90; i+=15) addRotPt(15 + 20*std::cos(i*M_PI/180), 50 + 40*std::sin(i*M_PI/180));
+            for(int i=90; i>=0; i-=10) addRotPt(15 + 80*std::cos(i*M_PI/180), 10 + 80*std::sin(i*M_PI/180));
+            for(int i=0; i<=90; i+=10) addRotPt(15 + 80*std::cos(i*M_PI/180), 90 - 80*std::sin(i*M_PI/180));
+            newShape();
+            for(int i=0; i<=360; i+=30) addRotPt(100 + 5*std::cos(i*M_PI/180), 50 + 5*std::sin(i*M_PI/180));
+            newShape(); addRotPt(105, 50); addRotPt(120, 50);
+            drawWord("XNOR", 45, 45);
             break;
         }
         case ELEC_FF_D:
@@ -415,39 +508,6 @@ void ElectronicsHandler::onButtonReleaseEvent(const PositionInputData& pos, doub
         addedElements.push_back(stroke);
     }
 
-    std::string textName;
-    switch (component) {
-        case ELEC_GATE_AND: textName = "AND"; break;
-        case ELEC_GATE_NAND: textName = "NAND"; break;
-        case ELEC_GATE_OR: textName = "OR"; break;
-        case ELEC_GATE_NOR: textName = "NOR"; break;
-        case ELEC_GATE_NOT: textName = "NOT"; break;
-        case ELEC_GATE_XOR: textName = "XOR"; break;
-        case ELEC_GATE_XNOR: textName = "XNOR"; break;
-        default: break;
-    }
-
-    if (!textName.empty()) {
-        Text* textElement = new Text();
-        textElement->setText(textName);
-        textElement->setColor(activeTool->getColor());
-        XojFont font("Sans", 12 * scale);
-        textElement->setFont(font);
-
-        // Center text horizontally and place it below the gate
-        // 50 is center of gate horizontally (from 0 to 100)
-        // 110 is just below the gate vertically (from 0 to 100)
-        double centerX = 50.0;
-        double bottomY = 110.0;
-
-        // We don't have font metrics easily available, approximate width
-        double approxTextWidth = static_cast<double>(textName.length()) * 12.0 * 0.6; // We scale nx and ny later
-
-        double nx = ((centerX - approxTextWidth / 2.0) * cT - bottomY * sT) * scale;
-        double ny = ((centerX - approxTextWidth / 2.0) * sT + bottomY * cT) * scale;
-        textElement->setOrigin(sx + nx, sy + ny);
-        addedElements.push_back(textElement);
-    }
 
     if (!addedElements.empty()) {
         auto groupAction = std::make_unique<GroupUndoAction>();
@@ -493,11 +553,69 @@ std::pair<std::vector<Point>, Range> ElectronicsHandler::createShape(bool isAltD
         else range = range.unite(Range(p.x, p.y, p.x, p.y));
     };
 
+
+
     auto addRotPt = [&](double lx, double ly) {
         double nx = (lx * cT - ly * sT) * scale;
         double ny = (lx * sT + ly * cT) * scale;
         addPt(nx, ny);
     };
+
+
+
+
+    auto newShape = [&]() {};
+    auto drawLetter = [&](char c, double ox, double oy, double cw, double ch) {
+        switch(c) {
+            case 'A':
+                newShape(); addRotPt(ox, oy+ch); addRotPt(ox+cw/2.0, oy); addRotPt(ox+cw, oy+ch);
+                newShape(); addRotPt(ox+cw*0.25, oy+ch/2.0); addRotPt(ox+cw*0.75, oy+ch/2.0);
+                break;
+            case 'N':
+                newShape(); addRotPt(ox, oy+ch); addRotPt(ox, oy); addRotPt(ox+cw, oy+ch); addRotPt(ox+cw, oy);
+                break;
+            case 'D':
+                newShape(); addRotPt(ox, oy+ch); addRotPt(ox, oy); addRotPt(ox+cw/2.0, oy);
+                for(int i=1; i<=8; ++i) addRotPt(ox+cw/2.0 + cw/2.0*std::sin(i*M_PI/8.0), oy+ch/2.0 - ch/2.0*std::cos(i*M_PI/8.0));
+                addRotPt(ox+cw/2.0, oy+ch); addRotPt(ox, oy+ch);
+                break;
+            case 'O':
+                newShape();
+                for(int i=0; i<=16; ++i) addRotPt(ox+cw/2.0 + cw/2.0*std::sin(i*2*M_PI/16.0), oy+ch/2.0 - ch/2.0*std::cos(i*2*M_PI/16.0));
+                break;
+            case 'R':
+                newShape(); addRotPt(ox, oy+ch); addRotPt(ox, oy); addRotPt(ox+cw/2.0, oy);
+                for(int i=1; i<=8; ++i) addRotPt(ox+cw/2.0 + cw/2.0*std::sin(i*M_PI/8.0), oy+ch/4.0 - ch/4.0*std::cos(i*M_PI/8.0));
+                addRotPt(ox+cw/2.0, oy+ch/2.0); addRotPt(ox, oy+ch/2.0);
+                newShape(); addRotPt(ox+cw/2.0, oy+ch/2.0); addRotPt(ox+cw, oy+ch);
+                break;
+            case 'T':
+                newShape(); addRotPt(ox, oy); addRotPt(ox+cw, oy);
+                newShape(); addRotPt(ox+cw/2.0, oy); addRotPt(ox+cw/2.0, oy+ch);
+                break;
+            case 'X':
+                newShape(); addRotPt(ox, oy); addRotPt(ox+cw, oy+ch);
+                newShape(); addRotPt(ox+cw, oy); addRotPt(ox, oy+ch);
+                break;
+        }
+    };
+
+    auto drawWord = [&](const char* word, double ox, double oy) {
+        double cw = 6.0;
+        double ch = 10.0;
+        double spacing = 2.0;
+        int len = 0;
+        for(const char* p = word; *p; ++p) len++;
+        double total_width = len * cw + (len - 1) * spacing;
+        double start_x = ox - total_width / 2.0;
+        for(const char* p = word; *p; ++p) {
+            drawLetter(*p, start_x, oy, cw, ch);
+            start_x += cw + spacing;
+        }
+    };
+
+
+
 
     switch (component) {
         case ELEC_WAVE_SINE: {
@@ -558,7 +676,7 @@ std::pair<std::vector<Point>, Range> ElectronicsHandler::createShape(bool isAltD
             for (int p = 0; p < periods; ++p) {
                 double offset = p * periodWidth;
                 if (p == 0) addPt(offset, amplitude);
-                else { addPt(offset, amplitude); }
+                else { newShape(); addPt(offset, amplitude); }
                 addPt(offset + periodWidth/2.0, 0);
                 addPt(offset + periodWidth/2.0, amplitude);
                 addPt(offset + periodWidth, 0);
@@ -664,49 +782,95 @@ std::pair<std::vector<Point>, Range> ElectronicsHandler::createShape(bool isAltD
             addRotPt(80, 50); addRotPt(100, 50);
             break;
         }
-        case ELEC_GATE_AND:
-        case ELEC_GATE_NAND: {
-            addRotPt(0, 30); addRotPt(20, 30); addRotPt(20, 10); addRotPt(50, 10);
-            for(int i=-90; i<=90; i+=10) addRotPt(50 + 40*std::cos(i*M_PI/180), 50 + 40*std::sin(i*M_PI/180));
-            addRotPt(20, 90); addRotPt(20, 10);
-            addRotPt(20, 70); addRotPt(0, 70);
-            if (component == ELEC_GATE_NAND) {
-                addRotPt(90, 50); for(int i=0; i<=360; i+=30) addRotPt(90 + 5*std::cos(i*M_PI/180), 50 + 5*std::sin(i*M_PI/180));
-                addRotPt(95, 50); addRotPt(110, 50);
-            } else { addRotPt(90, 50); addRotPt(110, 50); }
+case ELEC_GATE_AND: {
+            addRotPt(0, 30); addRotPt(20, 30);
+            newShape(); addRotPt(0, 70); addRotPt(20, 70);
+            newShape(); addRotPt(20, 10); addRotPt(20, 90); addRotPt(50, 90);
+            for(int i=90; i>=-90; i-=10) addRotPt(50 + 40*std::cos(i*M_PI/180), 50 - 40*std::sin(i*M_PI/180));
+            addRotPt(50, 10); addRotPt(20, 10);
+            newShape();
+            addRotPt(90, 50); addRotPt(120, 50);
+            drawWord("AND", 45, 45);
             break;
         }
-        case ELEC_GATE_OR:
+        case ELEC_GATE_NAND: {
+            addRotPt(0, 30); addRotPt(20, 30);
+            newShape(); addRotPt(0, 70); addRotPt(20, 70);
+            newShape(); addRotPt(20, 10); addRotPt(20, 90); addRotPt(50, 90);
+            for(int i=90; i>=-90; i-=10) addRotPt(50 + 40*std::cos(i*M_PI/180), 50 - 40*std::sin(i*M_PI/180));
+            addRotPt(50, 10); addRotPt(20, 10);
+            newShape();
+            for(int i=0; i<=360; i+=30) addRotPt(95 + 5*std::cos(i*M_PI/180), 50 + 5*std::sin(i*M_PI/180));
+            newShape(); addRotPt(100, 50); addRotPt(120, 50);
+            drawWord("NAND", 45, 45);
+            break;
+        }
+case ELEC_GATE_OR: {
+            addRotPt(0, 30); addRotPt(25, 30);
+            newShape(); addRotPt(0, 70); addRotPt(25, 70);
+            newShape();
+            for(int i=-90; i<=90; i+=15) addRotPt(10 + 20*std::cos(i*M_PI/180), 50 + 40*std::sin(i*M_PI/180));
+            for(int i=90; i>=0; i-=10) addRotPt(10 + 80*std::cos(i*M_PI/180), 10 + 80*std::sin(i*M_PI/180));
+            for(int i=0; i<=90; i+=10) addRotPt(10 + 80*std::cos(i*M_PI/180), 90 - 80*std::sin(i*M_PI/180));
+            newShape();
+            addRotPt(90, 50); addRotPt(120, 50);
+            drawWord("OR", 45, 45);
+            break;
+        }
         case ELEC_GATE_NOR: {
             addRotPt(0, 30); addRotPt(25, 30);
-            addRotPt(0, 70); addRotPt(25, 70);
+            newShape(); addRotPt(0, 70); addRotPt(25, 70);
+            newShape();
             for(int i=-90; i<=90; i+=15) addRotPt(10 + 20*std::cos(i*M_PI/180), 50 + 40*std::sin(i*M_PI/180));
-            for(int i=90; i>=0; i-=10) addRotPt(10 + 90*std::cos(i*M_PI/180), 10 + 80*std::sin(i*M_PI/180));
-            for(int i=0; i<=90; i+=10) addRotPt(10 + 90*std::cos(i*M_PI/180), 90 - 80*std::sin(i*M_PI/180));
-            if (component == ELEC_GATE_NOR) {
-                for(int i=0; i<=360; i+=30) addRotPt(100 + 5*std::cos(i*M_PI/180), 50 + 5*std::sin(i*M_PI/180));
-                addRotPt(105, 50); addRotPt(120, 50);
-            } else { addRotPt(100, 50); addRotPt(120, 50); }
+            for(int i=90; i>=0; i-=10) addRotPt(10 + 80*std::cos(i*M_PI/180), 10 + 80*std::sin(i*M_PI/180));
+            for(int i=0; i<=90; i+=10) addRotPt(10 + 80*std::cos(i*M_PI/180), 90 - 80*std::sin(i*M_PI/180));
+            newShape();
+            for(int i=0; i<=360; i+=30) addRotPt(95 + 5*std::cos(i*M_PI/180), 50 + 5*std::sin(i*M_PI/180));
+            newShape(); addRotPt(100, 50); addRotPt(120, 50);
+            drawWord("NOR", 45, 45);
             break;
         }
-        case ELEC_GATE_NOT: {
-            addRotPt(0, 50); addRotPt(20, 50); addRotPt(20, 20); addRotPt(70, 50); addRotPt(20, 80); addRotPt(20, 50);
+case ELEC_GATE_NOT: {
+            addRotPt(0, 50); addRotPt(20, 50);
+            newShape(); addRotPt(20, 20); addRotPt(70, 50); addRotPt(20, 80); addRotPt(20, 20);
+            newShape();
             for(int i=0; i<=360; i+=20) addRotPt(75 + 5*std::cos(i*M_PI/180), 50 + 5*std::sin(i*M_PI/180));
-            addRotPt(80, 50); addRotPt(100, 50);
+            newShape(); addRotPt(80, 50); addRotPt(100, 50);
+            drawWord("NOT", 35, 45);
             break;
         }
-        case ELEC_GATE_XOR:
+case ELEC_GATE_XOR: {
+            addRotPt(0, 30); addRotPt(15, 30);
+            newShape(); addRotPt(0, 70); addRotPt(15, 70);
+            newShape();
+            for(int i=-90; i<=90; i+=10) addRotPt(5 + 20*std::cos(i*M_PI/180), 50 + 40*std::sin(i*M_PI/180));
+            newShape();
+            for(int i=-90; i<=90; i+=15) addRotPt(15 + 20*std::cos(i*M_PI/180), 50 + 40*std::sin(i*M_PI/180));
+            for(int i=90; i>=0; i-=10) addRotPt(15 + 80*std::cos(i*M_PI/180), 10 + 80*std::sin(i*M_PI/180));
+            for(int i=0; i<=90; i+=10) addRotPt(15 + 80*std::cos(i*M_PI/180), 90 - 80*std::sin(i*M_PI/180));
+            newShape();
+            addRotPt(95, 50); addRotPt(120, 50);
+            drawWord("XOR", 45, 45);
+            break;
+        }
         case ELEC_GATE_XNOR: {
-            addRotPt(0, 30); addRotPt(15, 30); addRotPt(15, 10);
-            for(int i=-90; i<=90; i+=10) addRotPt(15 + 80*std::cos(i*M_PI/180), 50 + 80*std::sin(i*M_PI/180));
-            addRotPt(15, 90); addRotPt(15, 70); addRotPt(0, 70);
-            for(int i=-90; i<=90; i+=10) addRotPt(10 + 20*std::cos(i*M_PI/180), 50 + 40*std::sin(i*M_PI/180));
-            addRotPt(95, 50); addRotPt(105, 50);
+            addRotPt(0, 30); addRotPt(15, 30);
+            newShape(); addRotPt(0, 70); addRotPt(15, 70);
+            newShape();
+            for(int i=-90; i<=90; i+=10) addRotPt(5 + 20*std::cos(i*M_PI/180), 50 + 40*std::sin(i*M_PI/180));
+            newShape();
+            for(int i=-90; i<=90; i+=15) addRotPt(15 + 20*std::cos(i*M_PI/180), 50 + 40*std::sin(i*M_PI/180));
+            for(int i=90; i>=0; i-=10) addRotPt(15 + 80*std::cos(i*M_PI/180), 10 + 80*std::sin(i*M_PI/180));
+            for(int i=0; i<=90; i+=10) addRotPt(15 + 80*std::cos(i*M_PI/180), 90 - 80*std::sin(i*M_PI/180));
+            newShape();
+            for(int i=0; i<=360; i+=30) addRotPt(100 + 5*std::cos(i*M_PI/180), 50 + 5*std::sin(i*M_PI/180));
+            newShape(); addRotPt(105, 50); addRotPt(120, 50);
+            drawWord("XNOR", 45, 45);
             break;
         }
         case ELEC_FF_D:
         case ELEC_FF_JK: {
-            addRotPt(20, 10); addRotPt(80, 10); addRotPt(80, 90); addRotPt(20, 90); addRotPt(20, 10);
+            newShape(); addRotPt(20, 10); addRotPt(80, 10); addRotPt(80, 90); addRotPt(20, 90); addRotPt(20, 10);
             addRotPt(0, 30); addRotPt(20, 30);
             addRotPt(0, 70); addRotPt(20, 70); addRotPt(30, 75); addRotPt(20, 80);
             addRotPt(80, 30); addRotPt(100, 30);
