@@ -11,6 +11,7 @@
 #include "undo/UndoRedoHandler.h"
 #include "gui/inputdevices/PositionInputData.h"
 #include "model/XojPage.h"
+#include "model/Text.h"
 
 ElectronicsHandler::ElectronicsHandler(Control* control, const PageRef& page)
     : BaseShapeHandler(control, page) {
@@ -412,6 +413,40 @@ void ElectronicsHandler::onButtonReleaseEvent(const PositionInputData& pos, doub
         stroke->setLineStyle(activeTool->getLineStyle());
         stroke->setPointVector(shape_pts, nullptr);
         addedElements.push_back(stroke);
+    }
+
+    std::string textName;
+    switch (component) {
+        case ELEC_GATE_AND: textName = "AND"; break;
+        case ELEC_GATE_NAND: textName = "NAND"; break;
+        case ELEC_GATE_OR: textName = "OR"; break;
+        case ELEC_GATE_NOR: textName = "NOR"; break;
+        case ELEC_GATE_NOT: textName = "NOT"; break;
+        case ELEC_GATE_XOR: textName = "XOR"; break;
+        case ELEC_GATE_XNOR: textName = "XNOR"; break;
+        default: break;
+    }
+
+    if (!textName.empty()) {
+        Text* textElement = new Text();
+        textElement->setText(textName);
+        textElement->setColor(activeTool->getColor());
+        XojFont font("Sans", 12 * scale);
+        textElement->setFont(font);
+
+        // Center text horizontally and place it below the gate
+        // 50 is center of gate horizontally (from 0 to 100)
+        // 110 is just below the gate vertically (from 0 to 100)
+        double centerX = 50.0;
+        double bottomY = 110.0;
+
+        // We don't have font metrics easily available, approximate width
+        double approxTextWidth = static_cast<double>(textName.length()) * 12.0 * 0.6; // We scale nx and ny later
+
+        double nx = ((centerX - approxTextWidth / 2.0) * cT - bottomY * sT) * scale;
+        double ny = ((centerX - approxTextWidth / 2.0) * sT + bottomY * cT) * scale;
+        textElement->setOrigin(sx + nx, sy + ny);
+        addedElements.push_back(textElement);
     }
 
     if (!addedElements.empty()) {
