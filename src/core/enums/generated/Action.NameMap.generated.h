@@ -74,6 +74,8 @@ constexpr const char* ACTION_NAMES[] = {  // Action to string conversion map
         "tool-draw-arrow",
         "tool-draw-double-arrow",
         "tool-draw-coordinate-system",
+        "tool-draw-xy-scatter-graph",
+        "tool-draw-x-t-scatter-graph",
         "tool-draw-line",
         "tool-draw-spline",
         "tool-draw-electronics",

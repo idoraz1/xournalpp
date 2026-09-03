@@ -31,6 +31,8 @@
 #include "control/settings/Settings.h"              // for Settings
 #include "control/tools/ArrowHandler.h"             // for ArrowHandler
 #include "control/tools/CoordinateSystemHandler.h"  // for CoordinateSystemH...
+#include "control/tools/XYScatterGraphHandler.h"
+#include "control/tools/XTScatterGraphHandler.h"
 #include "control/tools/EditSelection.h"            // for EditSelection
 #include "control/tools/EllipseHandler.h"           // for EllipseHandler
 #include "control/tools/EraseHandler.h"             // for EraseHandler
@@ -289,6 +291,12 @@ auto XojPageView::onButtonPressEvent(const PositionInputData& pos) -> bool {
                 break;
             case DRAWING_TYPE_COORDINATE_SYSTEM:
                 this->inputHandler = std::make_unique<CoordinateSystemHandler>(control, getPage());
+                break;
+            case DRAWING_TYPE_XY_SCATTER_GRAPH:
+                this->inputHandler = std::make_unique<XYScatterGraphHandler>(control, getPage());
+                break;
+            case DRAWING_TYPE_X_T_SCATTER_GRAPH:
+                this->inputHandler = std::make_unique<XTScatterGraphHandler>(control, getPage());
                 break;
             case DRAWING_TYPE_ELECTRONICS:
                 this->inputHandler = std::make_unique<ElectronicsHandler>(control, getPage());

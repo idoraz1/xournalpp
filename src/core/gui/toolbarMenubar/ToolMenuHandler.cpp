@@ -421,6 +421,10 @@ void ToolMenuHandler::initToolItems() {
     emplaceCustomItemTgl("DRAW_DOUBLE_ARROW", Cat::TOOLS, Action::TOOL_DRAW_DOUBLE_ARROW, "draw-double-arrow",
                          _("Draw Double Arrow"));
     emplaceCustomItemTgl("DRAW_COORDINATE_SYSTEM", Cat::TOOLS, Action::TOOL_DRAW_COORDINATE_SYSTEM,
+    emplaceCustomItemTgl("DRAW_XY_SCATTER_GRAPH", Cat::TOOLS, Action::TOOL_DRAW_XY_SCATTER_GRAPH,
+                         "draw-coordinate-system", _("Draw XY scatter graph"));
+    emplaceCustomItemTgl("DRAW_X_T_SCATTER_GRAPH", Cat::TOOLS, Action::TOOL_DRAW_X_T_SCATTER_GRAPH,
+                         "draw-coordinate-system", _("Draw X-T scatter graph"));
                          "draw-coordinate-system", _("Draw Coordinate System"));
     emplaceCustomItemTgl("RULER", Cat::TOOLS, Action::TOOL_DRAW_LINE, "draw-line", _("Draw Line"));
     emplaceCustomItemTgl("DRAW_SPLINE", Cat::TOOLS, Action::TOOL_DRAW_SPLINE, "draw-spline", _("Draw Spline"));

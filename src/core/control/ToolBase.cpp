@@ -39,6 +39,10 @@ void ToolBase::setDrawingType(DrawingType drawingType) { this->drawingType = dra
 auto ToolBase::getElectronicsComponentType() const -> ElectronicsComponentType { return this->electronicsComponentType; }
 
 void ToolBase::setElectronicsComponentType(ElectronicsComponentType type) { this->electronicsComponentType = type; }
+auto ToolBase::getWavelength() const -> int { return this->wavelength; }
+
+void ToolBase::setWavelength(int wavelength) { this->wavelength = wavelength; }
+
 
 /**
  * @return Eraser Type

@@ -613,6 +613,8 @@ struct ActionPropDrawingTypes {
         actionDB->setActionState(Action::TOOL_DRAW_ARROW, false);
         actionDB->setActionState(Action::TOOL_DRAW_DOUBLE_ARROW, false);
         actionDB->setActionState(Action::TOOL_DRAW_COORDINATE_SYSTEM, false);
+        actionDB->setActionState(Action::TOOL_DRAW_XY_SCATTER_GRAPH, false);
+        actionDB->setActionState(Action::TOOL_DRAW_X_T_SCATTER_GRAPH, false);
         actionDB->setActionState(Action::TOOL_DRAW_LINE, false);
         actionDB->setActionState(Action::TOOL_DRAW_SPLINE, false);
         actionDB->setActionState(Action::TOOL_DRAW_ELECTRONICS, false);
@@ -636,6 +638,10 @@ template <>
 struct ActionProperties<Action::TOOL_DRAW_DOUBLE_ARROW>: ActionPropDrawingTypes<DRAWING_TYPE_DOUBLE_ARROW> {};
 template <>
 struct ActionProperties<Action::TOOL_DRAW_COORDINATE_SYSTEM>: ActionPropDrawingTypes<DRAWING_TYPE_COORDINATE_SYSTEM> {};
+template <>
+struct ActionProperties<Action::TOOL_DRAW_XY_SCATTER_GRAPH>: ActionPropDrawingTypes<DRAWING_TYPE_XY_SCATTER_GRAPH> {};
+template <>
+struct ActionProperties<Action::TOOL_DRAW_X_T_SCATTER_GRAPH>: ActionPropDrawingTypes<DRAWING_TYPE_X_T_SCATTER_GRAPH> {};
 template <>
 struct ActionProperties<Action::TOOL_DRAW_LINE>: ActionPropDrawingTypes<DRAWING_TYPE_LINE> {};
 template <>

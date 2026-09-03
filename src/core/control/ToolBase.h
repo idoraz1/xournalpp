@@ -84,6 +84,16 @@ public:
     void setEraserType(EraserType eraserType);
 
     /**
+     * @return Wavelength for waveform electronics
+     */
+    int getWavelength() const;
+
+    /**
+     * @param wavelength Wavelength for waveform electronics
+     */
+    void setWavelength(int wavelength);
+
+    /**
      * @return Fill of the shape is enabled
      */
     bool getFill() const;
@@ -139,6 +149,11 @@ private:
      * Active electronics component
      */
     ElectronicsComponentType electronicsComponentType = ELEC_WAVE_SINE;
+
+    /**
+     * Wavelength for waveforms
+     */
+    int wavelength = 5;
 
     /**
      * Eraser type

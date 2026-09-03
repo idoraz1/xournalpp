@@ -34,6 +34,15 @@ void ElectronicsComboToolButton::onComponentSelected(GtkWidget* widget, gpointer
     self->db->control->getToolHandler()->setDrawingType(DRAWING_TYPE_ELECTRONICS);
 }
 
+void ElectronicsComboToolButton::onWavelengthChanged(GtkSpinButton* spinButton, gpointer data) {
+    auto* self = static_cast<ElectronicsComboToolButton*>(data);
+    int val = gtk_spin_button_get_value_as_int(spinButton);
+    if (auto* t = self->db->control->getToolHandler()->getActiveTool()) {
+        t->setWavelength(val);
+    }
+
+}
+
 xoj::util::WidgetSPtr ElectronicsComboToolButton::createItem(bool horizontal) {
     GtkWidget* box = gtk_box_new(horizontal ? GTK_ORIENTATION_HORIZONTAL : GTK_ORIENTATION_VERTICAL, 0);
 
@@ -101,6 +110,15 @@ xoj::util::WidgetSPtr ElectronicsComboToolButton::createItem(bool horizontal) {
 
     gtk_widget_show_all(menu);
     gtk_menu_button_set_popup(GTK_MENU_BUTTON(menuButton), menu);
+
+    GtkWidget* wavelengthSpin = gtk_spin_button_new_with_range(1.0, 15.0, 1.0);
+    gtk_spin_button_set_value(GTK_SPIN_BUTTON(wavelengthSpin), 5.0);
+    gtk_widget_set_tooltip_text(wavelengthSpin, _("Wavelength"));
+    g_signal_connect(wavelengthSpin, "value-changed", G_CALLBACK(onWavelengthChanged), this);
+    if (auto* t = this->db->control->getToolHandler()->getActiveTool()) {
+        gtk_spin_button_set_value(GTK_SPIN_BUTTON(wavelengthSpin), t->getWavelength());
+    }
+    gtk_box_pack_start(GTK_BOX(box), wavelengthSpin, FALSE, FALSE, 0);
 
     gtk_box_pack_start(GTK_BOX(box), menuButton, FALSE, FALSE, 0);
     gtk_widget_show_all(box);

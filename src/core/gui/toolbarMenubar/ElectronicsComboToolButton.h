@@ -33,6 +33,7 @@ protected:
 
 private:
     static void onComponentSelected(GtkWidget* widget, gpointer data);
+    static void onWavelengthChanged(GtkSpinButton* spinButton, gpointer data);
 
     ActionDatabase* db;
 };

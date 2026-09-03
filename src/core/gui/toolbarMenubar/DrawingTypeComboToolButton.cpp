@@ -38,6 +38,10 @@ static auto makeEntries(IconNameHelper& icons, const ActionDatabase& db)
             Entry(_("Draw Double Arrow"), icons.iconName("draw-double-arrow"), db, Action::TOOL_DRAW_DOUBLE_ARROW);
     entries[Type::LINE] = Entry(_("Draw Line"), icons.iconName("draw-line"), db, Action::TOOL_DRAW_LINE);
     entries[Type::COORDINATE_SYSTEM] = Entry(_("Draw coordinate system"), icons.iconName("draw-coordinate-system"), db,
+    entries[Type::XY_SCATTER_GRAPH] = Entry(_("Draw XY scatter graph"), icons.iconName("draw-coordinate-system"), db,
+                                             Action::TOOL_DRAW_XY_SCATTER_GRAPH);
+    entries[Type::X_T_SCATTER_GRAPH] = Entry(_("Draw X-T scatter graph"), icons.iconName("draw-coordinate-system"), db,
+                                             Action::TOOL_DRAW_X_T_SCATTER_GRAPH);
                                              Action::TOOL_DRAW_COORDINATE_SYSTEM);
     entries[Type::SPLINE] = Entry(_("Draw Spline"), icons.iconName("draw-spline"), db, Action::TOOL_DRAW_SPLINE);
     entries[Type::SHAPE_RECOGNIZER] =

@@ -1190,6 +1190,8 @@ void Control::toolChanged() {
     this->actionDB->enableAction(Action::TOOL_DRAW_ARROW, toolHandler->hasCapability(TOOL_CAP_ARROW));
     this->actionDB->enableAction(Action::TOOL_DRAW_DOUBLE_ARROW, toolHandler->hasCapability(TOOL_CAP_DOUBLE_ARROW));
     this->actionDB->enableAction(Action::TOOL_DRAW_COORDINATE_SYSTEM, toolHandler->hasCapability(TOOL_CAP_ARROW));
+    this->actionDB->enableAction(Action::TOOL_DRAW_XY_SCATTER_GRAPH, toolHandler->hasCapability(TOOL_CAP_ARROW));
+    this->actionDB->enableAction(Action::TOOL_DRAW_X_T_SCATTER_GRAPH, toolHandler->hasCapability(TOOL_CAP_ARROW));
     this->actionDB->enableAction(Action::TOOL_DRAW_SPLINE, toolHandler->hasCapability(TOOL_CAP_SPLINE));
     this->actionDB->enableAction(Action::TOOL_DRAW_SHAPE_RECOGNIZER, toolHandler->hasCapability(TOOL_CAP_RECOGNIZER));
 
@@ -1200,6 +1202,8 @@ void Control::toolChanged() {
     this->actionDB->setActionState(Action::TOOL_DRAW_ARROW, dt == DRAWING_TYPE_ARROW);
     this->actionDB->setActionState(Action::TOOL_DRAW_DOUBLE_ARROW, dt == DRAWING_TYPE_DOUBLE_ARROW);
     this->actionDB->setActionState(Action::TOOL_DRAW_COORDINATE_SYSTEM, dt == DRAWING_TYPE_COORDINATE_SYSTEM);
+    this->actionDB->setActionState(Action::TOOL_DRAW_XY_SCATTER_GRAPH, dt == DRAWING_TYPE_XY_SCATTER_GRAPH);
+    this->actionDB->setActionState(Action::TOOL_DRAW_X_T_SCATTER_GRAPH, dt == DRAWING_TYPE_X_T_SCATTER_GRAPH);
     this->actionDB->setActionState(Action::TOOL_DRAW_SPLINE, dt == DRAWING_TYPE_SPLINE);
     this->actionDB->setActionState(Action::TOOL_DRAW_SHAPE_RECOGNIZER, dt == DRAWING_TYPE_SHAPE_RECOGNIZER);
 

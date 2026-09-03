@@ -109,13 +109,17 @@ enum DrawingType {
     DRAWING_TYPE_ARROW,
     DRAWING_TYPE_DOUBLE_ARROW,
     DRAWING_TYPE_COORDINATE_SYSTEM,
+    DRAWING_TYPE_XY_SCATTER_GRAPH,
+    DRAWING_TYPE_X_T_SCATTER_GRAPH,
     DRAWING_TYPE_SHAPE_RECOGNIZER,
     DRAWING_TYPE_SPLINE,
     DRAWING_TYPE_ELECTRONICS
 };
-static constexpr std::array<std::string_view, 11> drawingTypeNames{
+static constexpr std::array<std::string_view, 13> drawingTypeNames{
         "dontChange",           "default",          "line",  "rectangle", "ellipse", "arrow", "doubleArrow",
-        "drawCoordinateSystem", "strokeRecognizer", "spline", "electronics"};
+        "drawCoordinateSystem",
+                                                                        "drawXYScatterGraph",
+                                                                        "drawXTScatterGraph", "drawXYScatterGraph", "drawXTScatterGraph", "strokeRecognizer", "spline", "electronics"};
 
 static constexpr std::string_view drawingTypeToString(DrawingType type) {
     return drawingTypeNames.at(static_cast<size_t>(type));
@@ -145,6 +149,8 @@ enum ToolType {
     TOOL_DRAW_ARROW = 16,
     TOOL_DRAW_DOUBLE_ARROW = 17,
     TOOL_DRAW_COORDINATE_SYSTEM = 18,
+    TOOL_DRAW_XY_SCATTER_GRAPH = 27,
+    TOOL_DRAW_X_T_SCATTER_GRAPH = 28,
     TOOL_FLOATING_TOOLBOX = 19,
     TOOL_DRAW_SPLINE = 20,
     TOOL_SELECT_PDF_TEXT_LINEAR = 21,
@@ -154,9 +160,9 @@ enum ToolType {
     TOOL_LINK = 25,
     TOOL_LATEX = 26,
 
-    TOOL_END_ENTRY
+    TOOL_END_ENTRY = 29
 };
-static constexpr std::array<std::string_view, TOOL_END_ENTRY> toolNames{"none",
+static constexpr std::array<std::string_view, 29> toolNames{"none",
                                                                         "pen",
                                                                         "eraser",
                                                                         "highlighter",
@@ -175,6 +181,8 @@ static constexpr std::array<std::string_view, TOOL_END_ENTRY> toolNames{"none",
                                                                         "drawArrow",
                                                                         "drawDoubleArrow",
                                                                         "drawCoordinateSystem",
+                                                                        "drawXYScatterGraph",
+                                                                        "drawXTScatterGraph",
                                                                         "showFloatingToolbox",
                                                                         "drawSpline",
                                                                         "selectPdfTextLinear",

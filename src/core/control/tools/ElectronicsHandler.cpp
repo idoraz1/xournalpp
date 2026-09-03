@@ -128,7 +128,7 @@ void ElectronicsHandler::onButtonReleaseEvent(const PositionInputData& pos, doub
             if (std::abs(dx) < 1.0) dx = 1.0;
             double amplitude = std::abs(dy) / 2.0;
             if (amplitude < 10.0) amplitude = 10.0;
-            int periods = std::max(1, static_cast<int>(std::abs(dx) / 15.0));
+            int periods = std::max(1, static_cast<int>(std::abs(dx) / static_cast<double>(this->control->getToolHandler()->getActiveTool()->getWavelength())));
             double periodWidth = dx / periods;
             int pointsPerPeriod = 40;
             double step = periodWidth / pointsPerPeriod;
@@ -147,7 +147,7 @@ void ElectronicsHandler::onButtonReleaseEvent(const PositionInputData& pos, doub
         case ELEC_WAVE_SQUARE: {
             if (std::abs(dx) < 1.0) dx = 1.0;
             double amplitude = std::abs(dy);
-            int periods = std::max(1, static_cast<int>(std::abs(dx) / 15.0));
+            int periods = std::max(1, static_cast<int>(std::abs(dx) / static_cast<double>(this->control->getToolHandler()->getActiveTool()->getWavelength())));
             double periodWidth = dx / periods;
             for (int p = 0; p < periods; ++p) {
                 double offset = p * periodWidth;
@@ -163,7 +163,7 @@ void ElectronicsHandler::onButtonReleaseEvent(const PositionInputData& pos, doub
         case ELEC_WAVE_TRIANGLE: {
             if (std::abs(dx) < 1.0) dx = 1.0;
             double amplitude = std::abs(dy);
-            int periods = std::max(1, static_cast<int>(std::abs(dx) / 15.0));
+            int periods = std::max(1, static_cast<int>(std::abs(dx) / static_cast<double>(this->control->getToolHandler()->getActiveTool()->getWavelength())));
             double periodWidth = dx / periods;
             for (int p = 0; p < periods; ++p) {
                 double offset = p * periodWidth;
@@ -177,7 +177,7 @@ void ElectronicsHandler::onButtonReleaseEvent(const PositionInputData& pos, doub
         case ELEC_WAVE_SAWTOOTH: {
             if (std::abs(dx) < 1.0) dx = 1.0;
             double amplitude = std::abs(dy);
-            int periods = std::max(1, static_cast<int>(std::abs(dx) / 15.0));
+            int periods = std::max(1, static_cast<int>(std::abs(dx) / static_cast<double>(this->control->getToolHandler()->getActiveTool()->getWavelength())));
             double periodWidth = dx / periods;
             for (int p = 0; p < periods; ++p) {
                 double offset = p * periodWidth;
@@ -261,7 +261,7 @@ void ElectronicsHandler::onButtonReleaseEvent(const PositionInputData& pos, doub
             addRotPt(80, 0); addRotPt(100, 0);
             newShape();
             // Sine wave inside
-            for(int i=-180; i<=180; i+=20) addRotPt(50 + i*15.0/180.0, 10*std::sin(i*M_PI/180));
+            for(int i=-180; i<=180; i+=20) addRotPt(50 + i*static_cast<double>(this->control->getToolHandler()->getActiveTool()->getWavelength())/180.0, 10*std::sin(i*M_PI/180));
             break;
         }
         case ELEC_SOURCE_CURRENT: {
@@ -622,7 +622,7 @@ std::pair<std::vector<Point>, Range> ElectronicsHandler::createShape(bool isAltD
             if (std::abs(dx) < 1.0) dx = 1.0;
             double amplitude = std::abs(dy) / 2.0;
             if (amplitude < 10.0) amplitude = 10.0;
-            int periods = std::max(1, static_cast<int>(std::abs(dx) / 15.0));
+            int periods = std::max(1, static_cast<int>(std::abs(dx) / static_cast<double>(this->control->getToolHandler()->getActiveTool()->getWavelength())));
             double periodWidth = dx / periods;
             int pointsPerPeriod = 40;
             double step = periodWidth / pointsPerPeriod;
@@ -641,7 +641,7 @@ std::pair<std::vector<Point>, Range> ElectronicsHandler::createShape(bool isAltD
         case ELEC_WAVE_SQUARE: {
             if (std::abs(dx) < 1.0) dx = 1.0;
             double amplitude = std::abs(dy);
-            int periods = std::max(1, static_cast<int>(std::abs(dx) / 15.0));
+            int periods = std::max(1, static_cast<int>(std::abs(dx) / static_cast<double>(this->control->getToolHandler()->getActiveTool()->getWavelength())));
             double periodWidth = dx / periods;
             for (int p = 0; p < periods; ++p) {
                 double offset = p * periodWidth;
@@ -657,7 +657,7 @@ std::pair<std::vector<Point>, Range> ElectronicsHandler::createShape(bool isAltD
         case ELEC_WAVE_TRIANGLE: {
             if (std::abs(dx) < 1.0) dx = 1.0;
             double amplitude = std::abs(dy);
-            int periods = std::max(1, static_cast<int>(std::abs(dx) / 15.0));
+            int periods = std::max(1, static_cast<int>(std::abs(dx) / static_cast<double>(this->control->getToolHandler()->getActiveTool()->getWavelength())));
             double periodWidth = dx / periods;
             for (int p = 0; p < periods; ++p) {
                 double offset = p * periodWidth;
@@ -671,7 +671,7 @@ std::pair<std::vector<Point>, Range> ElectronicsHandler::createShape(bool isAltD
         case ELEC_WAVE_SAWTOOTH: {
             if (std::abs(dx) < 1.0) dx = 1.0;
             double amplitude = std::abs(dy);
-            int periods = std::max(1, static_cast<int>(std::abs(dx) / 15.0));
+            int periods = std::max(1, static_cast<int>(std::abs(dx) / static_cast<double>(this->control->getToolHandler()->getActiveTool()->getWavelength())));
             double periodWidth = dx / periods;
             for (int p = 0; p < periods; ++p) {
                 double offset = p * periodWidth;
@@ -741,7 +741,7 @@ std::pair<std::vector<Point>, Range> ElectronicsHandler::createShape(bool isAltD
             addRotPt(0, 0); addRotPt(20, 0);
             for(int i=0; i<=360; i+=10) addRotPt(50 + 30*std::cos(i*M_PI/180), 30*std::sin(i*M_PI/180));
             addRotPt(80, 0); addRotPt(100, 0);
-            for(int i=-180; i<=180; i+=20) addRotPt(50 + i*15.0/180.0, 10*std::sin(i*M_PI/180));
+            for(int i=-180; i<=180; i+=20) addRotPt(50 + i*static_cast<double>(this->control->getToolHandler()->getActiveTool()->getWavelength())/180.0, 10*std::sin(i*M_PI/180));
             break;
         }
         case ELEC_SOURCE_CURRENT: {
