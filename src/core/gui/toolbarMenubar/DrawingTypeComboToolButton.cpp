@@ -39,6 +39,10 @@ static auto makeEntries(IconNameHelper& icons, const ActionDatabase& db)
     entries[Type::LINE] = Entry(_("Draw Line"), icons.iconName("draw-line"), db, Action::TOOL_DRAW_LINE);
     entries[Type::COORDINATE_SYSTEM] = Entry(_("Draw coordinate system"), icons.iconName("draw-coordinate-system"), db,
                                              Action::TOOL_DRAW_COORDINATE_SYSTEM);
+    entries[Type::XY_SCATTER_GRAPH] = Entry(_("Draw XY Scatter Graph"), icons.iconName("draw-coordinate-system"), db,
+                                             Action::TOOL_DRAW_XY_SCATTER_GRAPH);
+    entries[Type::X_T_SCATTER_GRAPH] = Entry(_("Draw X-T Scatter Graph"), icons.iconName("draw-coordinate-system"), db,
+                                             Action::TOOL_DRAW_X_T_SCATTER_GRAPH);
     entries[Type::SPLINE] = Entry(_("Draw Spline"), icons.iconName("draw-spline"), db, Action::TOOL_DRAW_SPLINE);
     entries[Type::SHAPE_RECOGNIZER] =
             Entry(_("Stroke recognizer"), icons.iconName("shape-recognizer"), db, Action::TOOL_DRAW_SHAPE_RECOGNIZER);
@@ -139,6 +143,12 @@ auto DrawingTypeComboToolButton::createItem(bool horizontal) -> xoj::util::Widge
     g_signal_connect((*entries)[Type::COORDINATE_SYSTEM].gAction.get(), "notify::state",
                      xoj::util::wrap_for_g_callback_v<Data::setProminentIconCallback<Type::COORDINATE_SYSTEM>>,
                      data.get());
+    g_signal_connect((*entries)[Type::XY_SCATTER_GRAPH].gAction.get(), "notify::state",
+                     xoj::util::wrap_for_g_callback_v<Data::setProminentIconCallback<Type::XY_SCATTER_GRAPH>>,
+                     data.get());
+    g_signal_connect((*entries)[Type::X_T_SCATTER_GRAPH].gAction.get(), "notify::state",
+                     xoj::util::wrap_for_g_callback_v<Data::setProminentIconCallback<Type::X_T_SCATTER_GRAPH>>,
+                     data.get());
     g_signal_connect((*entries)[Type::SPLINE].gAction.get(), "notify::state",
                      xoj::util::wrap_for_g_callback_v<Data::setProminentIconCallback<Type::SPLINE>>, data.get());
     g_signal_connect((*entries)[Type::SHAPE_RECOGNIZER].gAction.get(), "notify::state",
@@ -156,6 +166,8 @@ auto DrawingTypeComboToolButton::createItem(bool horizontal) -> xoj::util::Widge
                 g_signal_handlers_disconnect_by_data((*data->entries)[Type::DOUBLE_ARROW].gAction.get(), d);
                 g_signal_handlers_disconnect_by_data((*data->entries)[Type::LINE].gAction.get(), d);
                 g_signal_handlers_disconnect_by_data((*data->entries)[Type::COORDINATE_SYSTEM].gAction.get(), d);
+                g_signal_handlers_disconnect_by_data((*data->entries)[Type::XY_SCATTER_GRAPH].gAction.get(), d);
+                g_signal_handlers_disconnect_by_data((*data->entries)[Type::X_T_SCATTER_GRAPH].gAction.get(), d);
                 g_signal_handlers_disconnect_by_data((*data->entries)[Type::SPLINE].gAction.get(), d);
                 g_signal_handlers_disconnect_by_data((*data->entries)[Type::SHAPE_RECOGNIZER].gAction.get(), d);
                 delete data;

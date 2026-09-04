@@ -111,11 +111,14 @@ enum DrawingType {
     DRAWING_TYPE_COORDINATE_SYSTEM,
     DRAWING_TYPE_SHAPE_RECOGNIZER,
     DRAWING_TYPE_SPLINE,
-    DRAWING_TYPE_ELECTRONICS
+    DRAWING_TYPE_ELECTRONICS,
+    DRAWING_TYPE_XY_SCATTER_GRAPH,
+    DRAWING_TYPE_X_T_SCATTER_GRAPH
 };
-static constexpr std::array<std::string_view, 11> drawingTypeNames{
+static constexpr std::array<std::string_view, 13> drawingTypeNames{
         "dontChange",           "default",          "line",  "rectangle", "ellipse", "arrow", "doubleArrow",
-        "drawCoordinateSystem", "strokeRecognizer", "spline", "electronics"};
+        "drawCoordinateSystem", "strokeRecognizer", "spline", "electronics",
+        "drawXyScatterGraph", "drawXTScatterGraph"};
 
 static constexpr std::string_view drawingTypeToString(DrawingType type) {
     return drawingTypeNames.at(static_cast<size_t>(type));
@@ -153,6 +156,8 @@ enum ToolType {
     TOOL_LASER_POINTER_HIGHLIGHTER = 24,
     TOOL_LINK = 25,
     TOOL_LATEX = 26,
+    TOOL_DRAW_XY_SCATTER_GRAPH = 27,
+    TOOL_DRAW_X_T_SCATTER_GRAPH = 28,
 
     TOOL_END_ENTRY
 };
@@ -183,6 +188,8 @@ static constexpr std::array<std::string_view, TOOL_END_ENTRY> toolNames{"none",
                                                                         "laserPointerHighlighter",
                                                                         "link",
                                                                         "latex",
+                                                                        "drawXyScatterGraph",
+                                                                        "drawXTScatterGraph",
 };
 
 auto isSelectToolType(ToolType type) -> bool;

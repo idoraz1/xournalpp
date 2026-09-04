@@ -637,6 +637,10 @@ struct ActionProperties<Action::TOOL_DRAW_DOUBLE_ARROW>: ActionPropDrawingTypes<
 template <>
 struct ActionProperties<Action::TOOL_DRAW_COORDINATE_SYSTEM>: ActionPropDrawingTypes<DRAWING_TYPE_COORDINATE_SYSTEM> {};
 template <>
+struct ActionProperties<Action::TOOL_DRAW_XY_SCATTER_GRAPH>: ActionPropDrawingTypes<DRAWING_TYPE_XY_SCATTER_GRAPH> {};
+template <>
+struct ActionProperties<Action::TOOL_DRAW_X_T_SCATTER_GRAPH>: ActionPropDrawingTypes<DRAWING_TYPE_X_T_SCATTER_GRAPH> {};
+template <>
 struct ActionProperties<Action::TOOL_DRAW_LINE>: ActionPropDrawingTypes<DRAWING_TYPE_LINE> {};
 template <>
 struct ActionProperties<Action::TOOL_DRAW_SPLINE>: ActionPropDrawingTypes<DRAWING_TYPE_SPLINE> {};

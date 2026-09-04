@@ -288,6 +288,8 @@ auto XojPageView::onButtonPressEvent(const PositionInputData& pos) -> bool {
                 this->inputHandler = std::make_unique<ArrowHandler>(control, getPage(), true);
                 break;
             case DRAWING_TYPE_COORDINATE_SYSTEM:
+            case DRAWING_TYPE_XY_SCATTER_GRAPH:
+            case DRAWING_TYPE_X_T_SCATTER_GRAPH:
                 this->inputHandler = std::make_unique<CoordinateSystemHandler>(control, getPage());
                 break;
             case DRAWING_TYPE_ELECTRONICS:

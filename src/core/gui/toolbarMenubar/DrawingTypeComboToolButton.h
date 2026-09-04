@@ -51,6 +51,8 @@ public:
         DOUBLE_ARROW,
         LINE,
         COORDINATE_SYSTEM,
+        XY_SCATTER_GRAPH,
+        X_T_SCATTER_GRAPH,
         SPLINE,
         SHAPE_RECOGNIZER,
         ENUMERATOR_COUNT

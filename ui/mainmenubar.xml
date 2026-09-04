@@ -608,6 +608,14 @@
       <attribute name="accel">&lt;Ctrl&gt;6</attribute>
      </item>
      <item>
+      <attribute name="label" translatable="yes">Draw XY Scatter Graph</attribute>
+      <attribute name="action">win.tool-draw-xy-scatter-graph</attribute>
+     </item>
+     <item>
+      <attribute name="label" translatable="yes">Draw X-T Scatter Graph</attribute>
+      <attribute name="action">win.tool-draw-x-t-scatter-graph</attribute>
+     </item>
+     <item>
       <attribute name="label" translatable="yes">Draw _Line</attribute>
       <attribute name="action">win.tool-draw-line</attribute>
       <attribute name="accel">&lt;Ctrl&gt;7</attribute>
