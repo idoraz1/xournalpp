@@ -40,6 +40,10 @@ auto ToolBase::getElectronicsComponentType() const -> ElectronicsComponentType {
 
 void ToolBase::setElectronicsComponentType(ElectronicsComponentType type) { this->electronicsComponentType = type; }
 
+auto ToolBase::getElectronicsWaveLength() const -> int { return this->electronicsWaveLength; }
+
+void ToolBase::setElectronicsWaveLength(int waveLength) { this->electronicsWaveLength = waveLength; }
+
 /**
  * @return Eraser Type
  */

@@ -39,6 +39,7 @@ void ElectronicsHandler::onButtonReleaseEvent(const PositionInputData& pos, doub
 
     // Now, we regenerate the disjoint multi-strokes
     ElectronicsComponentType component = this->control->getToolHandler()->getActiveTool()->getElectronicsComponentType();
+    int waveLength = this->control->getToolHandler()->getActiveTool()->getElectronicsWaveLength();
 
     double dx = currPoint.x - startPoint.x;
     double dy = currPoint.y - startPoint.y;
@@ -128,7 +129,7 @@ void ElectronicsHandler::onButtonReleaseEvent(const PositionInputData& pos, doub
             if (std::abs(dx) < 1.0) dx = 1.0;
             double amplitude = std::abs(dy) / 2.0;
             if (amplitude < 10.0) amplitude = 10.0;
-            int periods = std::max(1, static_cast<int>(std::abs(dx) / 15.0));
+            int periods = std::max(1, waveLength);
             double periodWidth = dx / periods;
             int pointsPerPeriod = 40;
             double step = periodWidth / pointsPerPeriod;
@@ -147,7 +148,7 @@ void ElectronicsHandler::onButtonReleaseEvent(const PositionInputData& pos, doub
         case ELEC_WAVE_SQUARE: {
             if (std::abs(dx) < 1.0) dx = 1.0;
             double amplitude = std::abs(dy);
-            int periods = std::max(1, static_cast<int>(std::abs(dx) / 15.0));
+            int periods = std::max(1, waveLength);
             double periodWidth = dx / periods;
             for (int p = 0; p < periods; ++p) {
                 double offset = p * periodWidth;
@@ -163,7 +164,7 @@ void ElectronicsHandler::onButtonReleaseEvent(const PositionInputData& pos, doub
         case ELEC_WAVE_TRIANGLE: {
             if (std::abs(dx) < 1.0) dx = 1.0;
             double amplitude = std::abs(dy);
-            int periods = std::max(1, static_cast<int>(std::abs(dx) / 15.0));
+            int periods = std::max(1, waveLength);
             double periodWidth = dx / periods;
             for (int p = 0; p < periods; ++p) {
                 double offset = p * periodWidth;
@@ -177,7 +178,7 @@ void ElectronicsHandler::onButtonReleaseEvent(const PositionInputData& pos, doub
         case ELEC_WAVE_SAWTOOTH: {
             if (std::abs(dx) < 1.0) dx = 1.0;
             double amplitude = std::abs(dy);
-            int periods = std::max(1, static_cast<int>(std::abs(dx) / 15.0));
+            int periods = std::max(1, waveLength);
             double periodWidth = dx / periods;
             for (int p = 0; p < periods; ++p) {
                 double offset = p * periodWidth;
@@ -534,6 +535,7 @@ std::pair<std::vector<Point>, Range> ElectronicsHandler::createShape(bool isAltD
     Range range;
 
     ElectronicsComponentType component = this->control->getToolHandler()->getActiveTool()->getElectronicsComponentType();
+    int waveLength = this->control->getToolHandler()->getActiveTool()->getElectronicsWaveLength();
 
     double dx = currPoint.x - startPoint.x;
     double dy = currPoint.y - startPoint.y;
@@ -622,7 +624,7 @@ std::pair<std::vector<Point>, Range> ElectronicsHandler::createShape(bool isAltD
             if (std::abs(dx) < 1.0) dx = 1.0;
             double amplitude = std::abs(dy) / 2.0;
             if (amplitude < 10.0) amplitude = 10.0;
-            int periods = std::max(1, static_cast<int>(std::abs(dx) / 15.0));
+            int periods = std::max(1, waveLength);
             double periodWidth = dx / periods;
             int pointsPerPeriod = 40;
             double step = periodWidth / pointsPerPeriod;
@@ -641,7 +643,7 @@ std::pair<std::vector<Point>, Range> ElectronicsHandler::createShape(bool isAltD
         case ELEC_WAVE_SQUARE: {
             if (std::abs(dx) < 1.0) dx = 1.0;
             double amplitude = std::abs(dy);
-            int periods = std::max(1, static_cast<int>(std::abs(dx) / 15.0));
+            int periods = std::max(1, waveLength);
             double periodWidth = dx / periods;
             for (int p = 0; p < periods; ++p) {
                 double offset = p * periodWidth;
@@ -657,7 +659,7 @@ std::pair<std::vector<Point>, Range> ElectronicsHandler::createShape(bool isAltD
         case ELEC_WAVE_TRIANGLE: {
             if (std::abs(dx) < 1.0) dx = 1.0;
             double amplitude = std::abs(dy);
-            int periods = std::max(1, static_cast<int>(std::abs(dx) / 15.0));
+            int periods = std::max(1, waveLength);
             double periodWidth = dx / periods;
             for (int p = 0; p < periods; ++p) {
                 double offset = p * periodWidth;
@@ -671,7 +673,7 @@ std::pair<std::vector<Point>, Range> ElectronicsHandler::createShape(bool isAltD
         case ELEC_WAVE_SAWTOOTH: {
             if (std::abs(dx) < 1.0) dx = 1.0;
             double amplitude = std::abs(dy);
-            int periods = std::max(1, static_cast<int>(std::abs(dx) / 15.0));
+            int periods = std::max(1, waveLength);
             double periodWidth = dx / periods;
             for (int p = 0; p < periods; ++p) {
                 double offset = p * periodWidth;

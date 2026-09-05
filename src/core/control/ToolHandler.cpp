@@ -116,6 +116,12 @@ void ToolHandler::initTools() {
     tools[TOOL_DRAW_COORDINATE_SYSTEM - TOOL_PEN] =
             std::make_unique<Tool>("drawCoordinateSystem", TOOL_DRAW_COORDINATE_SYSTEM, Colors::black, std::nullopt);
 
+    tools[TOOL_DRAW_XY_SCATTER_GRAPH - TOOL_PEN] =
+            std::make_unique<Tool>("drawXyScatterGraph", TOOL_DRAW_XY_SCATTER_GRAPH, Colors::black, std::nullopt);
+
+    tools[TOOL_DRAW_X_T_SCATTER_GRAPH - TOOL_PEN] =
+            std::make_unique<Tool>("drawXTScatterGraph", TOOL_DRAW_X_T_SCATTER_GRAPH, Colors::black, std::nullopt);
+
     tools[TOOL_DRAW_SPLINE - TOOL_PEN] =
             std::make_unique<Tool>("drawSpline", TOOL_DRAW_SPLINE, Colors::black, std::nullopt);
 

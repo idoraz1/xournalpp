@@ -70,6 +70,16 @@ public:
     void setElectronicsComponentType(ElectronicsComponentType type);
 
     /**
+     * @return Number of waves for electronics wave components
+     */
+    int getElectronicsWaveLength() const;
+
+    /**
+     * @param waveLength Number of waves for electronics wave components
+     */
+    void setElectronicsWaveLength(int waveLength);
+
+    /**
      * @brief Get the Eraser Type object
      *
      * @return EraserType
@@ -139,6 +149,11 @@ private:
      * Active electronics component
      */
     ElectronicsComponentType electronicsComponentType = ELEC_WAVE_SINE;
+
+    /**
+     * Number of waves for electronics wave components
+     */
+    int electronicsWaveLength = 5;
 
     /**
      * Eraser type

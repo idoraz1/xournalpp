@@ -9,6 +9,8 @@
 #include "gui/XournalView.h"                       // for XournalView
 #include "gui/inputdevices/PositionInputData.h"    // for PositionInputData
 #include "model/Point.h"                           // for Point
+#include "control/ToolHandler.h"
+#include "control/Tool.h"
 
 CoordinateSystemHandler::CoordinateSystemHandler(Control* control, const PageRef& page, bool flipShift,
                                                  bool flipControl):
@@ -55,11 +57,29 @@ auto CoordinateSystemHandler::createShape(bool isAltDown, bool isShiftDown, bool
     Range rg(p1.x, p1.y);
     rg.addPoint(p1.x + width, p1.y + height);
 
-    if (!this->modControl) {
-        // draw out from starting point
-        return {{p1, Point(p1.x, p1.y + height), Point(p1.x + width, p1.y + height)}, rg};
+    DrawingType dt = DRAWING_TYPE_COORDINATE_SYSTEM;
+    if (auto* tool = control->getToolHandler()->getActiveTool()) {
+        dt = tool->getDrawingType();
+    }
+
+    if (dt == DRAWING_TYPE_XY_SCATTER_GRAPH) {
+        return {{Point(p1.x + width / 2.0, p1.y),
+                 Point(p1.x + width / 2.0, p1.y + height),
+                 Point(p1.x + width / 2.0, p1.y + height / 2.0),
+                 Point(p1.x, p1.y + height / 2.0),
+                 Point(p1.x + width, p1.y + height / 2.0)}, rg};
+    } else if (dt == DRAWING_TYPE_X_T_SCATTER_GRAPH) {
+        return {{Point(p1.x, p1.y),
+                 Point(p1.x, p1.y + height),
+                 Point(p1.x, p1.y + height / 2.0),
+                 Point(p1.x + width, p1.y + height / 2.0)}, rg};
     } else {
-        // Control is down
-        return {{Point(p1.x, p1.y + height), p1, Point(p1.x + width, p1.y)}, rg};
+        if (!this->modControl) {
+            // draw out from starting point
+            return {{p1, Point(p1.x, p1.y + height), Point(p1.x + width, p1.y + height)}, rg};
+        } else {
+            // Control is down
+            return {{Point(p1.x, p1.y + height), p1, Point(p1.x + width, p1.y)}, rg};
+        }
     }
 }
