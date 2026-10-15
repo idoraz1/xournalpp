@@ -24,6 +24,13 @@ struct InputEvent;
 
 class TouchInputHandler: public AbstractInputHandler {
 private:
+    /// Minimal distance (in screen pixels) between two fingers for a pinch-zoom to start
+    static constexpr double MIN_ZOOM_START_DISTANCE = 60.0;
+    /// Minimal change of the finger distance (in screen pixels) before the zoom actually changes
+    static constexpr double MIN_ZOOM_TRIGGER_MOVEMENT = 15.0;
+    /// Maximal zoom change factor of a single pinch gesture
+    static constexpr double MAX_ZOOM_FACTOR_PER_GESTURE = 4.0;
+
     bool zooming = false;
     std::set<GdkEventSequence*> invalidActive;
 
@@ -58,4 +65,9 @@ public:
     bool handleImpl(InputEvent const& event) override;
     void onBlock() override;
     void onUnblock() override;
+
+    /**
+     * Abort any running scroll/zoom gesture and forget all active touches
+     */
+    void cancelGesture();
 };

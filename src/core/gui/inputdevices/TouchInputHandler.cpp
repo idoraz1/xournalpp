@@ -4,7 +4,8 @@
 
 #include "TouchInputHandler.h"
 
-#include <cmath>  // for abs
+#include <algorithm>  // for clamp
+#include <cmath>      // for abs
 
 #include "control/Control.h"                        // for Control
 #include "control/settings/Settings.h"              // for Settings
@@ -35,8 +36,13 @@ auto TouchInputHandler::handleImpl(InputEvent const& event) -> bool {
         if (invalidActive.empty() && event.sequence != primarySequence && event.sequence != secondarySequence) {
             // All touches are previously valid and we did not miss an end/cancel event for the current touch
             if (primarySequence && secondarySequence) {
-                // All touches become invalid
+                // All touches become invalid (3+ contacts: most likely a palm)
                 g_debug("All touches become invalid");
+                if (zooming) {
+                    // Otherwise the zoom sequence stays open and later zoom changes jump the view around
+                    zoomEnd();
+                }
+                startZoomReady = false;
                 invalidActive.insert({primarySequence, secondarySequence, event.sequence});
                 primarySequence = secondarySequence = nullptr;
             } else {
@@ -67,9 +73,18 @@ auto TouchInputHandler::handleImpl(InputEvent const& event) -> bool {
                 if (startZoomReady) {
                     if (this->primarySequence == event.sequence) {
                         sequenceStart(event);
-                        zoomStart();
+                        if (this->priLastAbs.distance(this->secLastAbs) < MIN_ZOOM_START_DISTANCE) {
+                            // Two contacts this close together are the parts of a resting palm, not a pinch.
+                            // A pinch starting from a tiny distance would also zoom by absurd factors.
+                            g_debug("Touch points too close for a pinch: ignoring both");
+                            invalidActive.insert({primarySequence, secondarySequence});
+                            primarySequence = secondarySequence = nullptr;
+                            startZoomReady = false;
+                        } else {
+                            zoomStart();
+                        }
                     }
-                } else {
+                } else if (zooming) {
                     zoomMotion(event);
                 }
             } else {
@@ -172,16 +187,20 @@ void TouchInputHandler::zoomMotion(InputEvent const& event) {
     double zoom = distance / this->startZoomDistance;
 
     double zoomTriggerThreshold = inputContext->getSettings()->getTouchZoomStartThreshold();
-    double zoomChangePercentage = std::abs(distance - startZoomDistance) / startZoomDistance * 100;
+    double zoomChange = std::abs(distance - startZoomDistance);
+    double zoomChangePercentage = zoomChange / startZoomDistance * 100;
 
     // Has the touch points moved far enough to trigger a zoom?
-    if (this->canBlockZoom && zoomChangePercentage < zoomTriggerThreshold) {
+    // (a palm "rolling" on the screen moves its contacts a little: require a real pinch movement)
+    if (this->canBlockZoom && (zoomChangePercentage < zoomTriggerThreshold || zoomChange < MIN_ZOOM_TRIGGER_MOVEMENT)) {
         zoom = 1.0;
     } else {
         // Touches have moved far enough from their initial location that we
         // no longer prevent touchscreen zooming.
         this->canBlockZoom = false;
     }
+    // One gesture may not change the zoom by more than this factor
+    zoom = std::clamp(zoom, 1.0 / MAX_ZOOM_FACTOR_PER_GESTURE, MAX_ZOOM_FACTOR_PER_GESTURE);
 
     ZoomControl* zoomControl = this->inputContext->getView()->getControl()->getZoomControl();
     const auto center = (this->priLastAbs + this->secLastAbs) / 2;
@@ -199,6 +218,14 @@ void TouchInputHandler::onBlock() {
     if (this->zooming) {
         zoomEnd();
     }
+}
+
+void TouchInputHandler::cancelGesture() {
+    if (this->zooming) {
+        zoomEnd();
+    }
+    this->startZoomReady = false;
+    onUnblock();
 }
 
 void TouchInputHandler::onUnblock() {

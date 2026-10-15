@@ -535,7 +535,9 @@ void PenInputHandler::actionLeaveWindow(InputEvent const& event) {
         gint width = gtk_widget_get_allocated_width(widget);
         gint height = gtk_widget_get_allocated_height(widget);
 
-        new std::thread([&, eventX, eventY, width, height]() {
+        // Detached on purpose: the loop ends as soon as the pen re-enters the widget.
+        // Capture only by value - this stack frame is gone long before the thread finishes.
+        std::thread([this, eventX, eventY, width, height]() {
             int offsetX = 0, offsetY = 0;
 
             // TODO(fabian): make offset dependent on how big the distance between pen and view is
@@ -560,7 +562,8 @@ void PenInputHandler::actionLeaveWindow(InputEvent const& event) {
 #endif
 
             while (!this->penInWidget) {
-                Util::execInUiThread([&]() {
+                // execInUiThread runs asynchronously: never capture locals of this thread by reference
+                Util::execInUiThread([this, offsetX, offsetY]() {
                     GtkXournal* xournal = this->inputContext->getXournal();
                     xournal->layout->scrollRelative(offsetX, offsetY);
                 });
@@ -568,7 +571,7 @@ void PenInputHandler::actionLeaveWindow(InputEvent const& event) {
                 // sleep for half a second until we scroll again
                 g_usleep(static_cast<gulong>(0.5 * G_USEC_PER_SEC));
             }
-        });
+        }).detach();
     }
 }
 
