@@ -280,6 +280,13 @@ void XournalppCursor::updateCursor() {
                 case CURSOR_SELECTION_DELETE:
                     setCursor(CRSR_PIRATE);
                     break;
+                case CURSOR_SELECTION_BTN_ROTATE_CCW:
+                case CURSOR_SELECTION_BTN_ROTATE_CW:
+                case CURSOR_SELECTION_BTN_ROTATE_180:
+                case CURSOR_SELECTION_BTN_FLIP_HORIZONTAL:
+                case CURSOR_SELECTION_BTN_FLIP_VERTICAL:
+                    setCursor(CRSR_HAND2);
+                    break;
                 default:
                     break;
             }

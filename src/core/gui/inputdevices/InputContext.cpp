@@ -12,6 +12,7 @@
 #include "control/Control.h"                            // for Control
 #include "control/DeviceListHelper.h"                   // for InputDevice
 #include "control/settings/Settings.h"                  // for Settings
+#include "gui/MainWindow.h"                             // for MainWindow
 #include "gui/XournalView.h"                            // for XournalView
 #include "gui/dialog/DeviceTestingArea.h"               // for DeviceTestingArea
 #include "gui/inputdevices/GeometryToolInputHandler.h"  // for GeometryToolInputHandler
@@ -196,6 +197,14 @@ auto InputContext::handle(GdkEvent* sourceEvent) -> bool {
 
     // handle touchscreens
     if (event.deviceClass == INPUT_DEVICE_TOUCHSCREEN) {
+        // Palm rejection: while the stylus touches the screen, any touch is a resting hand.
+        // Letting it through would scroll/zoom the page under the pen (bent strokes, jumps, crashes)
+        if (this->stylusHandler->isDevicePressed()) {
+            // The release events of touches that are already down get lost now: forget them
+            this->touchHandler->cancelGesture();
+            return true;
+        }
+
         bool touchDrawingEnabled = this->getSettings()->getTouchDrawingEnabled();
 
         // trigger touch drawing depending on the setting
@@ -259,6 +268,10 @@ void InputContext::blockDevice(InputContext::DeviceType deviceType) {
                 this->touchDrawingHandler->block(true);
             }
             this->touchHandler->block(true);
+            // GTK's kinetic scrolling grabs touches before they reach us: switch it off as well
+            if (auto* win = this->view ? this->view->getControl()->getWindow() : nullptr; win) {
+                win->setGtkTouchscreenScrollingEnabled(false);
+            }
             break;
     }
 }
@@ -279,6 +292,9 @@ void InputContext::unblockDevice(InputContext::DeviceType deviceType) {
                 this->touchDrawingHandler->block(false);
             }
             this->touchHandler->block(false);
+            if (auto* win = this->view ? this->view->getControl()->getWindow() : nullptr; win) {
+                win->setGtkTouchscreenScrollingForDeviceMapping();
+            }
             break;
     }
 }
@@ -290,7 +306,7 @@ auto InputContext::isBlocked(InputContext::DeviceType deviceType) -> bool {
         case STYLUS:
             return this->stylusHandler->isBlocked();
         case TOUCHSCREEN:
-            return this->touchDrawingHandler && this->touchDrawingHandler->isBlocked();
+            return this->touchHandler->isBlocked();
     }
     return false;
 }

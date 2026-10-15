@@ -32,6 +32,7 @@
 #include "model/DocumentListener.h"                 // for DocumentListener
 #include "model/GeometryTool.h"                     // for GeometryTool
 #include "model/PageRef.h"                          // for PageRef
+#include "undo/SelectionTransformUndoAction.h"      // for SelectionTransform
 #include "undo/UndoRedoHandler.h"                   // for UndoRedoHandler (ptr only)
 
 #include "ClipboardHandler.h"  // for ClipboardListener
@@ -269,6 +270,8 @@ public:
     void selectAllOnPage();
 
     void reorderSelection(EditSelection::OrderChange change);
+    /// Rotate the selection by 90/180 degrees or mirror it, around the selection's center
+    void transformSelection(SelectionTransform transform);
 
     void setToolSize(ToolSize size);
 

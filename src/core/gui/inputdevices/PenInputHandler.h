@@ -11,6 +11,8 @@
 
 #pragma once
 
+#include <atomic>  // for atomic
+
 #include "gui/inputdevices/InputEvents.h"  // for InputEvent
 #include "util/Point.h"
 
@@ -64,9 +66,9 @@ protected:
     xoj::util::Point<double> scrollOffsetVector{0., 0.};
 
     /**
-     * Flag whether pen is within the widget
+     * Flag whether pen is within the widget (read from the outside-scrolling thread)
      */
-    bool penInWidget = false;
+    std::atomic<bool> penInWidget = false;
 
     /**
      * Page a selection started at as we require this for motion updates
@@ -83,6 +85,11 @@ protected:
 public:
     explicit PenInputHandler(InputContext* inputContext);
     ~PenInputHandler() override;
+
+    /**
+     * @return true while the device is touching the screen / its main button is held
+     */
+    bool isDevicePressed() const { return deviceClassPressed; }
 
 protected:
     /**

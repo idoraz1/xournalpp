@@ -235,6 +235,41 @@ struct ActionProperties<Action::MOVE_SELECTION_LAYER_DOWN> {
 };
 
 template <>
+struct ActionProperties<Action::SELECTION_ROTATE_CW> {
+    static void callback(GSimpleAction*, GVariant*, Control* ctrl) {
+        ctrl->transformSelection(SelectionTransform::ROTATE_CW);
+    }
+};
+
+template <>
+struct ActionProperties<Action::SELECTION_ROTATE_CCW> {
+    static void callback(GSimpleAction*, GVariant*, Control* ctrl) {
+        ctrl->transformSelection(SelectionTransform::ROTATE_CCW);
+    }
+};
+
+template <>
+struct ActionProperties<Action::SELECTION_ROTATE_180> {
+    static void callback(GSimpleAction*, GVariant*, Control* ctrl) {
+        ctrl->transformSelection(SelectionTransform::ROTATE_180);
+    }
+};
+
+template <>
+struct ActionProperties<Action::SELECTION_FLIP_HORIZONTAL> {
+    static void callback(GSimpleAction*, GVariant*, Control* ctrl) {
+        ctrl->transformSelection(SelectionTransform::FLIP_HORIZONTAL);
+    }
+};
+
+template <>
+struct ActionProperties<Action::SELECTION_FLIP_VERTICAL> {
+    static void callback(GSimpleAction*, GVariant*, Control* ctrl) {
+        ctrl->transformSelection(SelectionTransform::FLIP_VERTICAL);
+    }
+};
+
+template <>
 struct ActionProperties<Action::ROTATION_SNAPPING> {
     using state_type = bool;
     static state_type initialState(Control* ctrl) { return ctrl->getSettings()->isSnapRotation(); }
@@ -616,6 +651,8 @@ struct ActionPropDrawingTypes {
         actionDB->setActionState(Action::TOOL_DRAW_LINE, false);
         actionDB->setActionState(Action::TOOL_DRAW_SPLINE, false);
         actionDB->setActionState(Action::TOOL_DRAW_ELECTRONICS, false);
+        actionDB->setActionState(Action::TOOL_DRAW_XY_SCATTER_GRAPH, false);
+        actionDB->setActionState(Action::TOOL_DRAW_X_T_SCATTER_GRAPH, false);
 
         g_simple_action_set_state(ga, p);
         bool enabled = g_variant_get_boolean(p);

@@ -43,6 +43,7 @@
 #include "util/raii/CStringWrapper.h"                   // for OwnedCString
 
 #include "GladeSearchpath.h"     // for GladeSearchpath
+#include "SessionDocumentsBar.h" // for SessionDocumentsBar
 #include "ToolbarDefinitions.h"  // for TOOLBAR_DEFINITIO...
 #include "XournalView.h"         // for XournalView
 #include "config-dev.h"          // for TOOLBAR_CONFIG
@@ -307,11 +308,37 @@ void MainWindow::updateColorscheme() {
 }
 
 void MainWindow::initXournalWidget() {
+    sessionDocumentsBar = std::make_unique<SessionDocumentsBar>(control);
+    gtk_box_append(GTK_BOX(get("boxContents")), sessionDocumentsBar->getWidget());
+
     winXournal = gtk_scrolled_window_new();
 
     setGtkTouchscreenScrollingForDeviceMapping();
 
     gtk_box_append(GTK_BOX(get("boxContents")), winXournal);
+
+    // Palm rejection for the scrollbars: a hand resting on the screen edge must not drag the scrollbar or
+    // page through the document by "clicking" the trough. Pen and mouse still work on the scrollbars.
+    // Finger scrolling is still possible by dragging the page itself.
+    for (GtkWidget* scrollbar: {gtk_scrolled_window_get_vscrollbar(GTK_SCROLLED_WINDOW(winXournal)),
+                                gtk_scrolled_window_get_hscrollbar(GTK_SCROLLED_WINDOW(winXournal))}) {
+        // Touches reported as emulated pointer events: drop them before GtkRange sees them
+        g_signal_connect(scrollbar, "event", G_CALLBACK(+[](GtkWidget*, GdkEvent* event, gpointer) -> gboolean {
+                             GdkDevice* device = gdk_event_get_source_device(event);
+                             return device && gdk_device_get_source(device) == GDK_SOURCE_TOUCHSCREEN;
+                         }),
+                         nullptr);
+        // Real touch sequences: claim them in the capture phase so GtkRange's own gestures never get them
+        GtkGesture* touchBlocker = gtk_gesture_multi_press_new(scrollbar);
+        gtk_gesture_single_set_touch_only(GTK_GESTURE_SINGLE(touchBlocker), true);
+        gtk_event_controller_set_propagation_phase(GTK_EVENT_CONTROLLER(touchBlocker), GTK_PHASE_CAPTURE);
+        g_signal_connect(touchBlocker, "begin", G_CALLBACK(+[](GtkGesture* g, GdkEventSequence* seq, gpointer) {
+                             gtk_gesture_set_sequence_state(g, seq, GTK_EVENT_SEQUENCE_CLAIMED);
+                         }),
+                         nullptr);
+        // GTK3 does not tie the gesture's lifetime to the widget
+        g_object_set_data_full(G_OBJECT(scrollbar), "xopp-touch-blocker", touchBlocker, g_object_unref);
+    }
 
     scrollHandling = std::make_unique<ScrollHandling>(GTK_SCROLLED_WINDOW(winXournal));
 
@@ -419,6 +446,8 @@ void MainWindow::dragDataRecived(GtkWidget* widget, GdkDragContext* dragContext,
 }
 
 auto MainWindow::getControl() const -> Control* { return control; }
+
+auto MainWindow::getSessionDocumentsBar() const -> SessionDocumentsBar* { return sessionDocumentsBar.get(); }
 
 void MainWindow::updateScrollbarSidebarPosition() {
     // Part 1: update scrollbar position

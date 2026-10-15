@@ -101,7 +101,8 @@ auto StylusInputHandler::handleImpl(InputEvent const& event) -> bool {
         this->actionEnterWindow(event);
     }
     if (event.type == LEAVE_EVENT) {
-        this->inputContext->getHandRecognition()->unblock();
+        // Do not re-enable touch right away: the hand usually still rests on the screen when the pen leaves
+        // (lifted out of range or moved over a toolbar). HandRecognition re-enables it after its timeout.
         this->actionLeaveWindow(event);
     }
 

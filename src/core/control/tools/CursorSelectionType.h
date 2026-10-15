@@ -28,5 +28,16 @@ enum CursorSelectionType {
     CURSOR_SELECTION_TOP,
     CURSOR_SELECTION_BOTTOM,
     CURSOR_SELECTION_ROTATE,
-    CURSOR_SELECTION_DELETE
+    CURSOR_SELECTION_DELETE,
+
+    // Buttons below the selection: one tap rotates by 90/180 degrees or mirrors the selection
+    CURSOR_SELECTION_BTN_ROTATE_CCW,
+    CURSOR_SELECTION_BTN_ROTATE_CW,
+    CURSOR_SELECTION_BTN_ROTATE_180,
+    CURSOR_SELECTION_BTN_FLIP_HORIZONTAL,
+    CURSOR_SELECTION_BTN_FLIP_VERTICAL
 };
+
+constexpr bool isSelectionTransformButton(CursorSelectionType t) {
+    return t >= CURSOR_SELECTION_BTN_ROTATE_CCW && t <= CURSOR_SELECTION_BTN_FLIP_VERTICAL;
+}

@@ -22,7 +22,7 @@ public:
         ElectronicsComponentType type;
     };
 
-    ElectronicsComboToolButton(std::string id, ActionDatabase* db);
+    ElectronicsComboToolButton(std::string id, ActionDatabase* db, std::string iconName);
     ~ElectronicsComboToolButton() override;
 
     std::string getToolDisplayName() const override;
@@ -33,6 +33,8 @@ protected:
 
 private:
     static void onComponentSelected(GtkWidget* widget, gpointer data);
+    static void onPeriodsSelected(GtkCheckMenuItem* item, gpointer data);
 
     ActionDatabase* db;
+    std::string iconName;
 };

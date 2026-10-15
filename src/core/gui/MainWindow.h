@@ -41,6 +41,7 @@ class FloatingToolbox;
 class GladeSearchpath;
 
 class Menubar;
+class SessionDocumentsBar;
 
 typedef std::array<xoj::util::WidgetSPtr, TOOLBAR_DEFINITIONS_LEN> ToolbarWidgetArray;
 
@@ -112,6 +113,9 @@ public:
 
     [[maybe_unused]] Menubar* getMenubar() const;
 
+    /// Switcher between the notebooks opened in this session (may be nullptr during construction)
+    SessionDocumentsBar* getSessionDocumentsBar() const;
+
     /**
      * Disable kinetic scrolling if there is a touchscreen device that was manually mapped to another enabled input
      * device class. This is required so the GtkScrolledWindow does not swallow all the events.
@@ -158,6 +162,7 @@ private:
 private:
     Control* control;
 
+    std::unique_ptr<SessionDocumentsBar> sessionDocumentsBar;
     std::unique_ptr<XournalView> xournal;
     GtkWidget* winXournal = nullptr;
     std::unique_ptr<ScrollHandling> scrollHandling;

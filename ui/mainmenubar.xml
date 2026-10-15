@@ -135,6 +135,33 @@
          </item>
        </section>
      </submenu>
+     <submenu>
+       <attribute name="label" translatable="yes">Rotate / Flip Selection</attribute>
+       <section>
+         <item>
+           <attribute name="label" translatable="yes">Rotate 90° Clockwise</attribute>
+           <attribute name="action">win.selection-rotate-cw</attribute>
+         </item>
+         <item>
+           <attribute name="label" translatable="yes">Rotate 90° Counterclockwise</attribute>
+           <attribute name="action">win.selection-rotate-ccw</attribute>
+         </item>
+         <item>
+           <attribute name="label" translatable="yes">Rotate 180°</attribute>
+           <attribute name="action">win.selection-rotate-180</attribute>
+         </item>
+       </section>
+       <section>
+         <item>
+           <attribute name="label" translatable="yes">Flip Horizontally</attribute>
+           <attribute name="action">win.selection-flip-horizontal</attribute>
+         </item>
+         <item>
+           <attribute name="label" translatable="yes">Flip Vertically</attribute>
+           <attribute name="action">win.selection-flip-vertical</attribute>
+         </item>
+       </section>
+     </submenu>
    </section>
    <section>
     <item>
