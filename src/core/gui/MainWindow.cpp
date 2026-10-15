@@ -43,6 +43,7 @@
 #include "util/raii/CStringWrapper.h"                   // for OwnedCString
 
 #include "GladeSearchpath.h"     // for GladeSearchpath
+#include "SessionDocumentsBar.h" // for SessionDocumentsBar
 #include "ToolbarDefinitions.h"  // for TOOLBAR_DEFINITIO...
 #include "XournalView.h"         // for XournalView
 #include "config-dev.h"          // for TOOLBAR_CONFIG
@@ -307,6 +308,9 @@ void MainWindow::updateColorscheme() {
 }
 
 void MainWindow::initXournalWidget() {
+    sessionDocumentsBar = std::make_unique<SessionDocumentsBar>(control);
+    gtk_box_append(GTK_BOX(get("boxContents")), sessionDocumentsBar->getWidget());
+
     winXournal = gtk_scrolled_window_new();
 
     setGtkTouchscreenScrollingForDeviceMapping();
@@ -442,6 +446,8 @@ void MainWindow::dragDataRecived(GtkWidget* widget, GdkDragContext* dragContext,
 }
 
 auto MainWindow::getControl() const -> Control* { return control; }
+
+auto MainWindow::getSessionDocumentsBar() const -> SessionDocumentsBar* { return sessionDocumentsBar.get(); }
 
 void MainWindow::updateScrollbarSidebarPosition() {
     // Part 1: update scrollbar position
