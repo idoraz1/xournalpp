@@ -3,6 +3,7 @@
 #include <algorithm>  // for min, max, stable_sort
 #include <cmath>      // for abs, cos, sin, cop...
 #include <cstddef>    // for size_t
+#include <iterator>   // for size
 #include <limits>     // for numeric_limits
 #include <memory>     // for make_unique, __sha...
 #include <numeric>    // for reduce
@@ -29,6 +30,7 @@
 #include "model/XojPage.h"                        // for XojPage
 #include "undo/ArrangeUndoAction.h"               // for ArrangeUndoAction
 #include "undo/InsertUndoAction.h"                // for InsertsUndoAction
+#include "undo/SelectionTransformUndoAction.h"    // for SelectionTransform
 #include "undo/UndoRedoHandler.h"                 // for UndoRedoHandler
 #include "util/Range.h"                           // for Range
 #include "util/Util.h"                            // for cairo_set_dash_from_vector
@@ -50,6 +52,23 @@ constexpr size_t MINPIXSIZE = 5;
 /// Padding for ui buttons
 constexpr int DELETE_PADDING = 20;
 constexpr int ROTATE_PADDING = 8;
+
+/// Row of rotate / flip buttons below the selection (sizes in screen pixels, big enough for a stylus)
+constexpr double TRANSFORM_BTN_SIZE = 30.0;
+constexpr double TRANSFORM_BTN_GAP = 6.0;
+constexpr double TRANSFORM_ROW_OFFSET = 16.0;  ///< Between the bottom edge of the selection and the buttons
+constexpr CursorSelectionType TRANSFORM_BUTTONS[] = {
+        CURSOR_SELECTION_BTN_ROTATE_CCW, CURSOR_SELECTION_BTN_ROTATE_CW, CURSOR_SELECTION_BTN_ROTATE_180,
+        CURSOR_SELECTION_BTN_FLIP_HORIZONTAL, CURSOR_SELECTION_BTN_FLIP_VERTICAL};
+constexpr size_t TRANSFORM_BTN_COUNT = std::size(TRANSFORM_BUTTONS);
+
+/// Top left corner (in pixels) of the i-th transform button, for a selection box spanning [xmin, xmax] x [.., ymax]
+static auto transformButtonOrigin(size_t i, double xmin, double xmax, double ymax) -> std::pair<double, double> {
+    constexpr double rowWidth =
+            TRANSFORM_BTN_COUNT * TRANSFORM_BTN_SIZE + (TRANSFORM_BTN_COUNT - 1) * TRANSFORM_BTN_GAP;
+    double left = (xmin + xmax) / 2 - rowWidth / 2;
+    return {left + static_cast<double>(i) * (TRANSFORM_BTN_SIZE + TRANSFORM_BTN_GAP), ymax + TRANSFORM_ROW_OFFSET};
+}
 
 /// Number of times to trigger edge pan timer per second
 constexpr unsigned int PAN_TIMER_RATE = 30;
@@ -515,6 +534,32 @@ void EditSelection::mouseUp() {
         return;
     }
 
+    if (isSelectionTransformButton(this->mouseDownType)) {
+        SelectionTransform t{};
+        switch (this->mouseDownType) {
+            case CURSOR_SELECTION_BTN_ROTATE_CCW:
+                t = SelectionTransform::ROTATE_CCW;
+                break;
+            case CURSOR_SELECTION_BTN_ROTATE_CW:
+                t = SelectionTransform::ROTATE_CW;
+                break;
+            case CURSOR_SELECTION_BTN_ROTATE_180:
+                t = SelectionTransform::ROTATE_180;
+                break;
+            case CURSOR_SELECTION_BTN_FLIP_HORIZONTAL:
+                t = SelectionTransform::FLIP_HORIZONTAL;
+                break;
+            default:
+                t = SelectionTransform::FLIP_VERTICAL;
+                break;
+        }
+        this->mouseDownType = CURSOR_SELECTION_NONE;
+        // The transform replaces this selection by a new one: run it once the input handler is done with us
+        Control* ctrl = this->view->getXournal()->getControl();
+        Util::execInUiThread([ctrl, t]() { ctrl->transformSelection(t); });
+        return;
+    }
+
 
     PageRef page = this->view->getPage();
     Layer* layer = page->getSelectedLayer();
@@ -553,6 +598,9 @@ void EditSelection::mouseDown(CursorSelectionType type, double x, double y) {
 }
 
 void EditSelection::mouseMove(double mouseX, double mouseY, bool alt) {
+    if (isSelectionTransformButton(this->mouseDownType)) {
+        return;  // a button press: nothing to drag
+    }
     double zoom = this->view->getXournal()->getZoom();
 
     if (this->mouseDownType == CURSOR_SELECTION_MOVE) {
@@ -1015,6 +1063,13 @@ auto EditSelection::getSelectionTypeForPos(double x, double y, double zoom) -> C
         return CURSOR_SELECTION_DELETE;
     }
 
+    for (size_t i = 0; i < TRANSFORM_BTN_COUNT; i++) {
+        auto [bx, by] = transformButtonOrigin(i, xmin, xmax, ymax);
+        if (bx <= x && x <= bx + TRANSFORM_BTN_SIZE && by <= y && y <= by + TRANSFORM_BTN_SIZE) {
+            return TRANSFORM_BUTTONS[i];
+        }
+    }
+
 
     if (supportRotation && xmax - BORDER_PADDING + ROTATE_PADDING + this->btnWidth <= x &&
         x <= xmax + BORDER_PADDING + ROTATE_PADDING + this->btnWidth && (y2 + y1) / 2 - 4 - BORDER_PADDING <= y &&
@@ -1133,7 +1188,127 @@ void EditSelection::paint(cairo_t* cr, double zoom) {
         drawAnchorRect(cr, x + width, y + height, zoom);
 
         drawDeleteRect(cr, std::min(x, x + width) - (DELETE_PADDING + this->btnWidth) / zoom, y, zoom);
+
+        const double xmin = std::min(x, x + width) * zoom;
+        const double xmax = std::max(x, x + width) * zoom;
+        const double ymax = std::max(y, y + height) * zoom;
+        for (size_t i = 0; i < TRANSFORM_BTN_COUNT; i++) {
+            auto [bx, by] = transformButtonOrigin(i, xmin, xmax, ymax);
+            drawTransformButton(cr, bx, by, TRANSFORM_BUTTONS[i]);
+        }
     }
+}
+
+/**
+ * Draws one of the rotate / flip buttons below the selection. (bx, by) is its top left corner, in pixels
+ */
+void EditSelection::drawTransformButton(cairo_t* cr, double bx, double by, CursorSelectionType type) const {
+    const double s = TRANSFORM_BTN_SIZE;
+    const double cx = bx + s / 2;
+    const double cy = by + s / 2;
+    const double r = s * 0.28;
+
+    cairo_save(cr);
+    cairo_set_dash(cr, nullptr, 0, 0);
+
+    // Button background
+    const double radius = 5;
+    cairo_new_sub_path(cr);
+    cairo_arc(cr, bx + s - radius, by + radius, radius, -M_PI / 2, 0);
+    cairo_arc(cr, bx + s - radius, by + s - radius, radius, 0, M_PI / 2);
+    cairo_arc(cr, bx + radius, by + s - radius, radius, M_PI / 2, M_PI);
+    cairo_arc(cr, bx + radius, by + radius, radius, M_PI, 3 * M_PI / 2);
+    cairo_close_path(cr);
+    cairo_set_source_rgb(cr, 1, 1, 1);
+    cairo_fill_preserve(cr);
+    GdkRGBA selectionColor = view->getSelectionColor();
+    gdk_cairo_set_source_rgba(cr, &selectionColor);
+    cairo_set_line_width(cr, 1.5);
+    cairo_stroke(cr);
+
+    // Glyph
+    cairo_set_source_rgb(cr, 0.2, 0.2, 0.2);
+    cairo_set_line_width(cr, 2);
+    cairo_set_line_cap(cr, CAIRO_LINE_CAP_ROUND);
+    cairo_set_line_join(cr, CAIRO_LINE_JOIN_ROUND);
+
+    // Filled arrow head at (px, py) pointing in direction (dx, dy) (normalized)
+    auto arrowHead = [&](double px, double py, double dx, double dy) {
+        const double len = 6;
+        const double halfWidth = 4;
+        cairo_move_to(cr, px + dx * len / 2, py + dy * len / 2);
+        cairo_line_to(cr, px - dx * len / 2 - dy * halfWidth, py - dy * len / 2 + dx * halfWidth);
+        cairo_line_to(cr, px - dx * len / 2 + dy * halfWidth, py - dy * len / 2 - dx * halfWidth);
+        cairo_close_path(cr);
+        cairo_fill(cr);
+    };
+    // Triangle with its tip at (tx, ty), its base centered at (ox, oy)
+    auto triangle = [&](double tx, double ty, double ox, double oy, bool filled) {
+        double dx = tx - ox;
+        double dy = ty - oy;
+        double l = std::hypot(dx, dy);
+        double nx = -dy / l * r * 0.75;
+        double ny = dx / l * r * 0.75;
+        cairo_move_to(cr, tx, ty);
+        cairo_line_to(cr, ox + nx, oy + ny);
+        cairo_line_to(cr, ox - nx, oy - ny);
+        cairo_close_path(cr);
+        if (filled) {
+            cairo_fill(cr);
+        } else {
+            cairo_stroke(cr);
+        }
+    };
+
+    // Screen y points down: increasing cairo angles go clockwise
+    switch (type) {
+        case CURSOR_SELECTION_BTN_ROTATE_CW: {
+            const double a1 = -M_PI * 0.75, a2 = M_PI * 0.6;
+            cairo_arc(cr, cx, cy, r, a1, a2);
+            cairo_stroke(cr);
+            arrowHead(cx + r * std::cos(a2), cy + r * std::sin(a2), -std::sin(a2), std::cos(a2));
+            break;
+        }
+        case CURSOR_SELECTION_BTN_ROTATE_CCW: {
+            const double a1 = -M_PI * 0.25, a2 = M_PI * 0.4;
+            cairo_arc_negative(cr, cx, cy, r, a1, a2);
+            cairo_stroke(cr);
+            arrowHead(cx + r * std::cos(a2), cy + r * std::sin(a2), std::sin(a2), -std::cos(a2));
+            break;
+        }
+        case CURSOR_SELECTION_BTN_ROTATE_180: {
+            // Half turn over the top, from left to right, ending pointing down
+            cairo_arc(cr, cx, cy + r * 0.4, r, M_PI, 2 * M_PI);
+            cairo_stroke(cr);
+            arrowHead(cx + r, cy + r * 0.4 + 2, 0, 1);
+            break;
+        }
+        case CURSOR_SELECTION_BTN_FLIP_HORIZONTAL: {
+            const double dashes[] = {2.5, 2.5};
+            cairo_set_dash(cr, dashes, 2, 0);
+            cairo_move_to(cr, cx, by + 4);
+            cairo_line_to(cr, cx, by + s - 4);
+            cairo_stroke(cr);
+            cairo_set_dash(cr, nullptr, 0, 0);
+            triangle(cx - 3, cy, cx - 3 - r, cy, true);   // left half: the original
+            triangle(cx + 3, cy, cx + 3 + r, cy, false);  // right half: its mirror image
+            break;
+        }
+        case CURSOR_SELECTION_BTN_FLIP_VERTICAL: {
+            const double dashes[] = {2.5, 2.5};
+            cairo_set_dash(cr, dashes, 2, 0);
+            cairo_move_to(cr, bx + 4, cy);
+            cairo_line_to(cr, bx + s - 4, cy);
+            cairo_stroke(cr);
+            cairo_set_dash(cr, nullptr, 0, 0);
+            triangle(cx, cy - 3, cx, cy - 3 - r, true);   // top half: the original
+            triangle(cx, cy + 3, cx, cy + 3 + r, false);  // bottom half: its mirror image
+            break;
+        }
+        default:
+            break;
+    }
+    cairo_restore(cr);
 }
 
 void EditSelection::drawAnchorRotation(cairo_t* cr, double x, double y, double zoom) {

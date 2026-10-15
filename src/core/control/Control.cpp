@@ -552,6 +552,54 @@ void Control::reorderSelection(EditSelection::OrderChange change) {
     this->undoRedo->addUndoAction(std::move(undoAction));
 }
 
+void Control::transformSelection(SelectionTransform transform) {
+    XournalView* xournal = win->getXournal();
+    EditSelection* sel = xournal->getSelection();
+    if (!sel) {
+        return;
+    }
+
+    // Put the elements back on their page (applying any pending move/scale), transform them there, then select
+    // them again. That way the selection box is recomputed for the new shape.
+    XojPageView* view = sel->getView();
+    std::vector<Element*> elements;
+    for (const Element* e: sel->getElementsView()) {
+        // The view is read-only, but the elements are owned by the document and modified under its lock below
+        elements.push_back(const_cast<Element*>(e));
+    }
+    xournal->clearSelection();
+
+    PageRef page = view->getPage();
+    InsertionOrderRef order;
+    Range bounds;
+    {
+        std::lock_guard lock(*this->doc);
+        Layer* layer = page->getSelectedLayer();
+        for (Element* e: elements) {
+            auto index = layer->indexOf(e);
+            if (index == Element::InvalidIndex) {
+                // The selection landed somewhere unexpected: do not touch anything
+                g_warning("transformSelection: selected element not found on the page");
+                return;
+            }
+            order.emplace_back(e, index);
+            bounds = bounds.unite(Range(e->getBoundingBox()));
+        }
+    }
+    if (elements.empty()) {
+        return;
+    }
+    std::sort(order.begin(), order.end());
+
+    const double cx = (bounds.minX + bounds.maxX) / 2;
+    const double cy = (bounds.minY + bounds.maxY) / 2;
+    auto undoAction = std::make_unique<SelectionTransformUndoAction>(page, elements, cx, cy, transform);
+    undoAction->redo(this);  // applies the transform and repaints
+    this->undoRedo->addUndoAction(std::move(undoAction));
+
+    xournal->setSelection(SelectionFactory::createFromElementsOnActiveLayer(this, page, view, order).release());
+}
+
 /**
  * Fire page selected, but first check if the page Number is valid
  *

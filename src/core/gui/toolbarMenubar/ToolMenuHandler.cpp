@@ -305,6 +305,17 @@ void ToolMenuHandler::initToolItems() {
 
     emplaceStockItem("DELETE", Cat::MISC, Action::DELETE, "edit-delete", _("Delete"));
 
+    emplaceCustomItem("SELECTION_ROTATE_CW", Cat::SELECTION, Action::SELECTION_ROTATE_CW, "selection-rotate-cw",
+                      _("Rotate Selection 90° Clockwise"));
+    emplaceCustomItem("SELECTION_ROTATE_CCW", Cat::SELECTION, Action::SELECTION_ROTATE_CCW, "selection-rotate-ccw",
+                      _("Rotate Selection 90° Counterclockwise"));
+    emplaceCustomItem("SELECTION_ROTATE_180", Cat::SELECTION, Action::SELECTION_ROTATE_180, "selection-rotate-180",
+                      _("Rotate Selection 180°"));
+    emplaceCustomItem("SELECTION_FLIP_HORIZONTAL", Cat::SELECTION, Action::SELECTION_FLIP_HORIZONTAL,
+                      "selection-flip-horizontal", _("Flip Selection Horizontally"));
+    emplaceCustomItem("SELECTION_FLIP_VERTICAL", Cat::SELECTION, Action::SELECTION_FLIP_VERTICAL,
+                      "selection-flip-vertical", _("Flip Selection Vertically"));
+
     emplaceCustomItemTgl("ROTATION_SNAPPING", Cat::MISC, Action::ROTATION_SNAPPING, "snapping-rotation",
                          _("Rotation Snapping"));
     emplaceCustomItemTgl("GRID_SNAPPING", Cat::MISC, Action::GRID_SNAPPING, "snapping-grid", _("Grid Snapping"));

@@ -319,6 +319,11 @@ private:
      */
     void drawDeleteRect(cairo_t* cr, double x, double y, double zoom) const;
 
+    /**
+     * Draws one of the rotate / flip buttons shown below the selection
+     */
+    void drawTransformButton(cairo_t* cr, double bx, double by, CursorSelectionType type) const;
+
 
     /**
      * Finishes all pending changes, move the elements, scale the elements and add
