@@ -1,5 +1,8 @@
 #include "ElectronicsComboToolButton.h"
 
+#include <algorithm>  // for max
+#include <string>     // for to_string
+
 #include <glib/gi18n.h>
 
 #include "control/Control.h"
@@ -7,8 +10,8 @@
 #include "control/actions/ActionDatabase.h"
 #include "control/Tool.h"
 
-ElectronicsComboToolButton::ElectronicsComboToolButton(std::string id, ActionDatabase* db)
-    : AbstractToolItem(std::move(id), Category::TOOLS), db(db) {}
+ElectronicsComboToolButton::ElectronicsComboToolButton(std::string id, ActionDatabase* db, std::string iconName)
+    : AbstractToolItem(std::move(id), Category::TOOLS), db(db), iconName(std::move(iconName)) {}
 
 ElectronicsComboToolButton::~ElectronicsComboToolButton() = default;
 
@@ -17,7 +20,7 @@ std::string ElectronicsComboToolButton::getToolDisplayName() const {
 }
 
 GtkWidget* ElectronicsComboToolButton::getNewToolIcon() const {
-    return gtk_image_new_from_icon_name("draw-spline", GTK_ICON_SIZE_MENU);
+    return gtk_image_new_from_icon_name(iconName.c_str(), GTK_ICON_SIZE_SMALL_TOOLBAR);
 }
 
 void ElectronicsComboToolButton::onComponentSelected(GtkWidget* widget, gpointer data) {
@@ -32,6 +35,22 @@ void ElectronicsComboToolButton::onComponentSelected(GtkWidget* widget, gpointer
     // Activate the tool action
     self->db->setActionState(Action::TOOL_DRAW_ELECTRONICS, true);
     self->db->control->getToolHandler()->setDrawingType(DRAWING_TYPE_ELECTRONICS);
+}
+
+void ElectronicsComboToolButton::onPeriodsSelected(GtkCheckMenuItem* item, gpointer data) {
+    if (!gtk_check_menu_item_get_active(item)) {
+        return;  // the radio item that got deselected
+    }
+    auto* self = static_cast<ElectronicsComboToolButton*>(data);
+    int periods = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item), "periods"));
+
+    // Store it on every tool: the wave is drawn with whichever tool (pen, stylus button tool...) is active
+    for (auto&& tool: self->db->control->getToolHandler()->getTools()) {
+        tool->setElectronicsWaveLength(periods);
+    }
+    if (auto* t = self->db->control->getToolHandler()->getActiveTool()) {
+        t->setElectronicsWaveLength(periods);
+    }
 }
 
 xoj::util::WidgetSPtr ElectronicsComboToolButton::createItem(bool horizontal) {
@@ -98,6 +117,20 @@ xoj::util::WidgetSPtr ElectronicsComboToolButton::createItem(bool horizontal) {
     addItem(logicMenu, _("NOR Gate"), ELEC_GATE_NOR);
     addItem(logicMenu, _("XOR Gate"), ELEC_GATE_XOR);
     addItem(logicMenu, _("D Flip-Flop"), ELEC_FF_D);
+
+    // --- Number of periods drawn by the wave components (sine, square, triangle, sawtooth) ---
+    gtk_menu_shell_append(GTK_MENU_SHELL(menu), gtk_separator_menu_item_new());
+    GtkWidget* periodsMenu = createSubMenu(_("Number of Waves"));
+    const int currentPeriods = std::max(1, db->control->getToolHandler()->getTool(TOOL_PEN).getElectronicsWaveLength());
+    GSList* group = nullptr;
+    for (int n: {1, 2, 3, 4, 5, 6, 8, 10, 12, 15, 20}) {
+        GtkWidget* item = gtk_radio_menu_item_new_with_label(group, std::to_string(n).c_str());
+        group = gtk_radio_menu_item_get_group(GTK_RADIO_MENU_ITEM(item));
+        gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(item), n == currentPeriods);
+        g_object_set_data(G_OBJECT(item), "periods", GINT_TO_POINTER(n));
+        g_signal_connect(item, "toggled", G_CALLBACK(onPeriodsSelected), this);
+        gtk_menu_shell_append(GTK_MENU_SHELL(periodsMenu), item);
+    }
 
     gtk_widget_show_all(menu);
     gtk_menu_button_set_popup(GTK_MENU_BUTTON(menuButton), menu);

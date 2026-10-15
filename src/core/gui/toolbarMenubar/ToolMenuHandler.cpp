@@ -424,7 +424,8 @@ void ToolMenuHandler::initToolItems() {
                          "draw-coordinate-system", _("Draw Coordinate System"));
     emplaceCustomItemTgl("RULER", Cat::TOOLS, Action::TOOL_DRAW_LINE, "draw-line", _("Draw Line"));
     emplaceCustomItemTgl("DRAW_SPLINE", Cat::TOOLS, Action::TOOL_DRAW_SPLINE, "draw-spline", _("Draw Spline"));
-    emplaceItem<ElectronicsComboToolButton>("DRAW_ELECTRONICS", control->getActionDatabase());
+    emplaceItem<ElectronicsComboToolButton>("DRAW_ELECTRONICS", control->getActionDatabase(),
+                                            iconName("draw-electronics"));
 
     emplaceCustomItemWithTarget("SELECT_REGION", Cat::SELECTION, Action::SELECT_TOOL, TOOL_SELECT_REGION,
                                 "select-lasso", _("Select Region"));

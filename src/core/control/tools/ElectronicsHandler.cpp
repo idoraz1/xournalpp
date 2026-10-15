@@ -1,6 +1,10 @@
 #include "ElectronicsHandler.h"
 
+#include <algorithm>
 #include <cmath>
+#include <limits>
+#include <utility>
+#include <vector>
 #include "control/Control.h"
 #include "control/ToolHandler.h"
 #include "control/Tool.h"
@@ -12,6 +16,135 @@
 #include "gui/inputdevices/PositionInputData.h"
 #include "model/XojPage.h"
 #include "model/Text.h"
+
+namespace {
+/**
+ * Draws a wave component, shared by the preview and the final strokes.
+ * The wave's center line stays on the point where the drag started: dragging sideways sets its length,
+ * dragging up or down makes it taller / flatter symmetrically around that line.
+ * (nx, ny) passed to addPt are relative to the start point.
+ */
+template <typename AddPt>
+void drawWave(ElectronicsComponentType component, int waveCount, double dx, double dy, AddPt&& addPt) {
+    constexpr double MIN_AMPLITUDE = 8.0;
+    if (std::abs(dx) < 1.0) {
+        dx = 1.0;
+    }
+    const double a = std::max(std::abs(dy), MIN_AMPLITUDE);  // distance from the center line to a peak
+    const int periods = std::max(1, waveCount);
+    const double w = dx / periods;
+
+    switch (component) {
+        case ELEC_WAVE_SINE: {
+            const int pointsPerPeriod = 40;
+            for (int p = 0; p < periods; ++p) {
+                for (int i = (p == 0 ? 0 : 1); i <= pointsPerPeriod; ++i) {
+                    double lx = w * i / pointsPerPeriod;
+                    addPt(p * w + lx, -a * std::sin(lx / w * 2 * M_PI));
+                }
+            }
+            break;
+        }
+        case ELEC_WAVE_SQUARE:
+            addPt(0, 0);
+            for (int p = 0; p < periods; ++p) {
+                double o = p * w;
+                addPt(o, -a);
+                addPt(o + w / 2, -a);
+                addPt(o + w / 2, a);
+                addPt(o + w, a);
+            }
+            addPt(dx, 0);
+            break;
+        case ELEC_WAVE_TRIANGLE:
+            addPt(0, 0);
+            for (int p = 0; p < periods; ++p) {
+                double o = p * w;
+                addPt(o + w / 4, -a);
+                addPt(o + 3 * w / 4, a);
+                addPt(o + w, 0);
+            }
+            break;
+        case ELEC_WAVE_SAWTOOTH:
+            addPt(0, a);
+            for (int p = 0; p < periods; ++p) {
+                double o = p * w;
+                addPt(o + w, -a);
+                if (p < periods - 1) {
+                    addPt(o + w, a);
+                }
+            }
+            break;
+        default:
+            break;
+    }
+}
+
+/// A component drawn in its own coordinates (wire along +x from 0 to 100), one point list per stroke
+using LocalShapes = std::vector<std::vector<std::pair<double, double>>>;
+
+/**
+ * Places a component in the box spanned by the drag (corner to corner, like the rectangle tool), shared by the
+ * preview and the final strokes. The component keeps its proportions and is centered in the box: horizontal, or
+ * vertical when the box is taller than wide.
+ * A (nearly) flat drag only sets the length: the wire then lies exactly on the line where the drag started, which
+ * makes it easy to put components on the notebook lines.
+ * (x, y) passed to addPt are relative to the start point.
+ */
+template <typename AddPt, typename NewShape>
+void fitComponentToBox(const LocalShapes& shapes, double dx, double dy, AddPt&& addPt, NewShape&& newShape) {
+    constexpr double FLAT = 6.0;  ///< Below this thickness (page units), a drag is a "length only" drag
+    double minX = std::numeric_limits<double>::max(), maxX = std::numeric_limits<double>::lowest();
+    double minY = minX, maxY = maxX;
+    for (const auto& shape: shapes) {
+        for (auto [lx, ly]: shape) {
+            minX = std::min(minX, lx);
+            maxX = std::max(maxX, lx);
+            minY = std::min(minY, ly);
+            maxY = std::max(maxY, ly);
+        }
+    }
+    if (minX > maxX) {
+        return;  // nothing drawn
+    }
+    const double localW = std::max(maxX - minX, 1.0);
+    const double localH = std::max(maxY - minY, 1.0);
+
+    const double bw = std::abs(dx);
+    const double bh = std::abs(dy);
+    const double bx0 = std::min(0.0, dx);
+    const double by0 = std::min(0.0, dy);
+    const bool vertical = bh > bw;
+    const double along = std::max(vertical ? bh : bw, 1.0);
+    const double across = vertical ? bw : bh;
+    const bool flat = across < FLAT;
+
+    double s = along / localW;
+    if (!flat) {
+        s = std::min(s, across / localH);
+    }
+    const double compAlong = localW * s;
+    const double compAcross = localH * s;
+
+    for (const auto& shape: shapes) {
+        newShape();
+        for (auto [lx, ly]: shape) {
+            double u = (lx - minX) * s;  // position along the wire
+            double x = 0;
+            double y = 0;
+            if (!vertical) {
+                x = bx0 + (bw - compAlong) / 2 + u;
+                y = flat ? by0 + bh / 2 + ly * s : by0 + (bh - compAcross) / 2 + (ly - minY) * s;
+            } else {
+                // Turned 90° clockwise: the component's "below the wire" side faces left
+                x = flat ? bx0 + bw / 2 - ly * s : bx0 + (bw - compAcross) / 2 + (maxY - ly) * s;
+                y = by0 + (bh - compAlong) / 2 + u;
+            }
+            addPt(x, y);
+        }
+    }
+}
+}  // namespace
 
 ElectronicsHandler::ElectronicsHandler(Control* control, const PageRef& page)
     : BaseShapeHandler(control, page) {
@@ -43,22 +176,23 @@ void ElectronicsHandler::onButtonReleaseEvent(const PositionInputData& pos, doub
 
     double dx = currPoint.x - startPoint.x;
     double dy = currPoint.y - startPoint.y;
-    double len = std::sqrt(dx * dx + dy * dy);
-    if (len < 1.0) len = 1.0;
     double sx = startPoint.x;
     double sy = startPoint.y;
-    double scale = len / 100.0;
-    double theta = std::atan2(dy, dx);
-    double cT = std::cos(theta);
-    double sT = std::sin(theta);
 
     std::vector<std::vector<Point>> disjointShapes;
     std::vector<Point> currentShape;
+    LocalShapes localShapes(1);  // components are drawn in their own coordinates first, then fitted to the box
 
-    auto newShape = [&]() {
+    auto flush = [&]() {
         if (!currentShape.empty()) {
             disjointShapes.push_back(currentShape);
             currentShape.clear();
+        }
+    };
+    auto newShape = [&]() {
+        flush();
+        if (!localShapes.back().empty()) {
+            localShapes.emplace_back();
         }
     };
 
@@ -66,12 +200,8 @@ void ElectronicsHandler::onButtonReleaseEvent(const PositionInputData& pos, doub
         currentShape.push_back(Point(sx + nx, sy + ny, Point::NO_PRESSURE));
     };
 
-
-
     auto addRotPt = [&](double lx, double ly) {
-        double nx = (lx * cT - ly * sT) * scale;
-        double ny = (lx * sT + ly * cT) * scale;
-        addPt(nx, ny);
+        localShapes.back().emplace_back(lx, ly);
     };
 
     auto drawLetter = [&](char c, double ox, double oy, double cw, double ch) {
@@ -125,72 +255,12 @@ void ElectronicsHandler::onButtonReleaseEvent(const PositionInputData& pos, doub
 
 
     switch (component) {
-        case ELEC_WAVE_SINE: {
-            if (std::abs(dx) < 1.0) dx = 1.0;
-            double amplitude = std::abs(dy) / 2.0;
-            if (amplitude < 10.0) amplitude = 10.0;
-            int periods = std::max(1, waveLength);
-            double periodWidth = dx / periods;
-            int pointsPerPeriod = 40;
-            double step = periodWidth / pointsPerPeriod;
-            for (int p = 0; p < periods; ++p) {
-                for (int i = 0; i <= pointsPerPeriod; ++i) {
-                    if (p > 0 && i == 0) continue;
-                    double lx = step * i;
-                    double val = std::sin((lx / periodWidth) * 2 * M_PI);
-                    double px = (p * periodWidth) + lx;
-                    double py = -(val * amplitude);
-                    currentShape.push_back(Point(sx + px, sy + py + dy/2.0, Point::NO_PRESSURE));
-                }
-            }
+        case ELEC_WAVE_SINE:
+        case ELEC_WAVE_SQUARE:
+        case ELEC_WAVE_TRIANGLE:
+        case ELEC_WAVE_SAWTOOTH:
+            drawWave(component, waveLength, dx, dy, addPt);
             break;
-        }
-        case ELEC_WAVE_SQUARE: {
-            if (std::abs(dx) < 1.0) dx = 1.0;
-            double amplitude = std::abs(dy);
-            int periods = std::max(1, waveLength);
-            double periodWidth = dx / periods;
-            for (int p = 0; p < periods; ++p) {
-                double offset = p * periodWidth;
-                if (p == 0) addPt(offset, 0);
-                addPt(offset, amplitude);
-                addPt(offset + periodWidth/2.0, amplitude);
-                addPt(offset + periodWidth/2.0, 0);
-                addPt(offset + periodWidth, 0);
-                if (p == periods - 1) addPt(offset + periodWidth, amplitude);
-            }
-            break;
-        }
-        case ELEC_WAVE_TRIANGLE: {
-            if (std::abs(dx) < 1.0) dx = 1.0;
-            double amplitude = std::abs(dy);
-            int periods = std::max(1, waveLength);
-            double periodWidth = dx / periods;
-            for (int p = 0; p < periods; ++p) {
-                double offset = p * periodWidth;
-                if (p == 0) addPt(offset, amplitude/2.0);
-                addPt(offset + periodWidth/4.0, 0);
-                addPt(offset + 3.0*periodWidth/4.0, amplitude);
-                addPt(offset + periodWidth, amplitude/2.0);
-            }
-            break;
-        }
-        case ELEC_WAVE_SAWTOOTH: {
-            if (std::abs(dx) < 1.0) dx = 1.0;
-            double amplitude = std::abs(dy);
-            int periods = std::max(1, waveLength);
-            double periodWidth = dx / periods;
-            for (int p = 0; p < periods; ++p) {
-                double offset = p * periodWidth;
-                if (p == 0) addPt(offset, amplitude);
-                else { newShape(); addPt(offset, amplitude); }
-                addPt(offset + periodWidth/2.0, 0);
-                addPt(offset + periodWidth/2.0, amplitude);
-                addPt(offset + periodWidth, 0);
-                if (p == periods - 1) addPt(offset + periodWidth, amplitude);
-            }
-            break;
-        }
         case ELEC_RESISTOR_US: {
             addRotPt(0, 0); addRotPt(20, 0); addRotPt(25, -20); addRotPt(35, 20);
             addRotPt(45, -20); addRotPt(55, 20); addRotPt(65, -20); addRotPt(75, 20);
@@ -491,7 +561,9 @@ case ELEC_GATE_XOR: {
             break;
         }
     }
-    newShape();
+    flush();
+    fitComponentToBox(localShapes, dx, dy, addPt, flush);
+    flush();
 
     Tool* activeTool = control->getToolHandler()->getActiveTool();
     if (!activeTool) return;
@@ -539,14 +611,8 @@ std::pair<std::vector<Point>, Range> ElectronicsHandler::createShape(bool isAltD
 
     double dx = currPoint.x - startPoint.x;
     double dy = currPoint.y - startPoint.y;
-    double len = std::sqrt(dx * dx + dy * dy);
-    if (len < 1.0) len = 1.0;
     double sx = startPoint.x;
     double sy = startPoint.y;
-    double scale = len / 100.0;
-    double theta = std::atan2(dy, dx);
-    double cT = std::cos(theta);
-    double sT = std::sin(theta);
 
     auto addPt = [&](double nx, double ny) {
         Point p(sx + nx, sy + ny, Point::NO_PRESSURE);
@@ -555,18 +621,15 @@ std::pair<std::vector<Point>, Range> ElectronicsHandler::createShape(bool isAltD
         else range = range.unite(Range(p.x, p.y, p.x, p.y));
     };
 
-
-
-    auto addRotPt = [&](double lx, double ly) {
-        double nx = (lx * cT - ly * sT) * scale;
-        double ny = (lx * sT + ly * cT) * scale;
-        addPt(nx, ny);
+    // Components are drawn in their own coordinates first, then fitted to the box (same as the final strokes)
+    LocalShapes localShapes(1);
+    auto addRotPt = [&](double lx, double ly) { localShapes.back().emplace_back(lx, ly); };
+    // The preview is a single polyline
+    auto newShape = [&]() {
+        if (!localShapes.back().empty()) {
+            localShapes.emplace_back();
+        }
     };
-
-
-
-
-    auto newShape = [&]() {};
     auto drawLetter = [&](char c, double ox, double oy, double cw, double ch) {
         switch(c) {
             case 'A':
@@ -620,72 +683,12 @@ std::pair<std::vector<Point>, Range> ElectronicsHandler::createShape(bool isAltD
 
 
     switch (component) {
-        case ELEC_WAVE_SINE: {
-            if (std::abs(dx) < 1.0) dx = 1.0;
-            double amplitude = std::abs(dy) / 2.0;
-            if (amplitude < 10.0) amplitude = 10.0;
-            int periods = std::max(1, waveLength);
-            double periodWidth = dx / periods;
-            int pointsPerPeriod = 40;
-            double step = periodWidth / pointsPerPeriod;
-            for (int p = 0; p < periods; ++p) {
-                for (int i = 0; i <= pointsPerPeriod; ++i) {
-                    if (p > 0 && i == 0) continue;
-                    double lx = step * i;
-                    double val = std::sin((lx / periodWidth) * 2 * M_PI);
-                    double px = (p * periodWidth) + lx;
-                    double py = -(val * amplitude);
-                    addPt(px, py + dy/2.0);
-                }
-            }
+        case ELEC_WAVE_SINE:
+        case ELEC_WAVE_SQUARE:
+        case ELEC_WAVE_TRIANGLE:
+        case ELEC_WAVE_SAWTOOTH:
+            drawWave(component, waveLength, dx, dy, addPt);
             break;
-        }
-        case ELEC_WAVE_SQUARE: {
-            if (std::abs(dx) < 1.0) dx = 1.0;
-            double amplitude = std::abs(dy);
-            int periods = std::max(1, waveLength);
-            double periodWidth = dx / periods;
-            for (int p = 0; p < periods; ++p) {
-                double offset = p * periodWidth;
-                if (p == 0) addPt(offset, 0);
-                addPt(offset, amplitude);
-                addPt(offset + periodWidth/2.0, amplitude);
-                addPt(offset + periodWidth/2.0, 0);
-                addPt(offset + periodWidth, 0);
-                if (p == periods - 1) addPt(offset + periodWidth, amplitude);
-            }
-            break;
-        }
-        case ELEC_WAVE_TRIANGLE: {
-            if (std::abs(dx) < 1.0) dx = 1.0;
-            double amplitude = std::abs(dy);
-            int periods = std::max(1, waveLength);
-            double periodWidth = dx / periods;
-            for (int p = 0; p < periods; ++p) {
-                double offset = p * periodWidth;
-                if (p == 0) addPt(offset, amplitude/2.0);
-                addPt(offset + periodWidth/4.0, 0);
-                addPt(offset + 3.0*periodWidth/4.0, amplitude);
-                addPt(offset + periodWidth, amplitude/2.0);
-            }
-            break;
-        }
-        case ELEC_WAVE_SAWTOOTH: {
-            if (std::abs(dx) < 1.0) dx = 1.0;
-            double amplitude = std::abs(dy);
-            int periods = std::max(1, waveLength);
-            double periodWidth = dx / periods;
-            for (int p = 0; p < periods; ++p) {
-                double offset = p * periodWidth;
-                if (p == 0) addPt(offset, amplitude);
-                else { newShape(); addPt(offset, amplitude); }
-                addPt(offset + periodWidth/2.0, 0);
-                addPt(offset + periodWidth/2.0, amplitude);
-                addPt(offset + periodWidth, 0);
-                if (p == periods - 1) addPt(offset + periodWidth, amplitude);
-            }
-            break;
-        }
         case ELEC_RESISTOR_US: {
             addRotPt(0, 0); addRotPt(20, 0); addRotPt(25, -20); addRotPt(35, 20);
             addRotPt(45, -20); addRotPt(55, 20); addRotPt(65, -20); addRotPt(75, 20);
@@ -964,6 +967,7 @@ case ELEC_GATE_XOR: {
             break;
         }
     }
+    fitComponentToBox(localShapes, dx, dy, addPt, [] {});
 
     return {previewShape, range};
 }

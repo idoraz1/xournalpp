@@ -616,6 +616,8 @@ struct ActionPropDrawingTypes {
         actionDB->setActionState(Action::TOOL_DRAW_LINE, false);
         actionDB->setActionState(Action::TOOL_DRAW_SPLINE, false);
         actionDB->setActionState(Action::TOOL_DRAW_ELECTRONICS, false);
+        actionDB->setActionState(Action::TOOL_DRAW_XY_SCATTER_GRAPH, false);
+        actionDB->setActionState(Action::TOOL_DRAW_X_T_SCATTER_GRAPH, false);
 
         g_simple_action_set_state(ga, p);
         bool enabled = g_variant_get_boolean(p);
